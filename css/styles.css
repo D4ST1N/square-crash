@@ -1,0 +1,60 @@
+body {
+    margin: 0;
+}
+.scoreboard {
+    font-size: 32px;
+    font-family: cursive;
+    font-weight: 600;
+    color: #fff;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    opacity: .6;
+}
+
+.high-scoreboard {
+    font-size: 32px;
+    font-family: cursive;
+    font-weight: 600;
+    color: #fff;
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    opacity: .6;
+}
+
+.game-over {
+    position: fixed;
+    width: 400px;
+    left: calc(50vw - 200px);
+    top: 25vh;
+    background: rgba(55,71,79 ,.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 20px;
+    color: #fff;
+    font-size: 32px;
+    font-family: cursive;
+    box-shadow: 0 0 0 100vw rgba(55,71,79 ,.7);
+}
+
+.game-over__restart {
+    font-size: 32px;
+    margin-top: 10px;
+    font-family: cursive;
+    border: 0;
+    background: #fff;
+    border-radius: 10px;
+    padding: 5px 20px;
+    cursor: pointer;
+}
+
+.fps {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    font-family: cursive;
+    color: #fff;
+    opacity: .5;
+}
