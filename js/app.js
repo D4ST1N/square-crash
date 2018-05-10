@@ -171,8 +171,8 @@ const Game = {
   createBonus({ color, borderColor, name }) {
     const bonus = {
       pos:  {
-        x: this.randomInt(0, this.canvas.width - 40),
-        y: this.randomInt(0, this.canvas.height - 40),
+        x: this.randomInt(20, this.canvas.width - 20),
+        y: this.randomInt(20, this.canvas.height - 20),
       },
       size: 20,
       borderColor,
