@@ -28,7 +28,13 @@ const Game = {
         return true;
       },
       action(bonus) {
-        this.createScore(Object.assign({}, bonus.pos, { score: 100 * this.scaleCoefficient }));
+        this.createScore(Object.assign(
+          {},
+          bonus.pos,
+          {
+            score: 100 * this.scaleCoefficient,
+          },
+        ));
         this.score += 100 * this.scaleCoefficient;
       },
     },
@@ -124,8 +130,10 @@ const Game = {
   },
   createEnemy(save = false) {
     const minSize = Math.round(this.player.size * 0.10);
-    const maxCoefficient = Math.pow(0.8, this.scaleCoefficient);
-    const maxSize = save ? Math.round(this.player.size * 0.65) : Math.round(this.player.size * (1 / maxCoefficient));
+    const maxCoefficient = Math.min(Math.pow(0.87, this.scaleCoefficient), 3);
+    const maxSize = save
+                    ? Math.round(this.player.size * 0.65)
+                    : Math.round(this.player.size * (1 / maxCoefficient));
     const enemySize = this.randomInt(minSize, maxSize);
     const enemy = {
       pos:  {
@@ -265,19 +273,23 @@ const Game = {
     this.ctx.fillText(score.text, score.pos.x, score.pos.y);
   },
   checkMoving(delta) {
-    if (this.keys['37'].pressed && this.player.pos.x > this.gameConstants.canvasBorderWidth) {
+    if (this.keys['37'].pressed && this.player.pos.x > 0) {
       this.player.pos.x -= this.player.speed * (16 / delta);
     }
 
-    if (this.keys['38'].pressed && this.player.pos.y > this.gameConstants.canvasBorderWidth) {
+    if (this.keys['38'].pressed && this.player.pos.y > 0) {
       this.player.pos.y -= this.player.speed * (16 / delta);
     }
 
-    if (this.keys['39'].pressed && this.player.pos.x < this.canvas.width - this.player.size - this.gameConstants.canvasBorderWidth) {
+    if (this.keys['39'].pressed
+        && this.player.pos.x < this.canvas.width - this.player.size
+    ) {
       this.player.pos.x += this.player.speed * (16 / delta);
     }
 
-    if (this.keys['40'].pressed && this.player.pos.y < this.canvas.height - this.player.size - this.gameConstants.canvasBorderWidth) {
+    if (this.keys['40'].pressed
+        && this.player.pos.y < this.canvas.height - this.player.size
+    ) {
       this.player.pos.y += this.player.speed * (16 / delta);
     }
   },
@@ -286,7 +298,9 @@ const Game = {
       if (isNaN(enemy.pos.x) || isNaN(enemy.pos.y)) {
         this.enemies.splice(index, 1);
       } else {
-        if (Math.abs(enemy.pos.x - enemy.moveTo.x) < 1 && Math.abs(enemy.pos.y - enemy.moveTo.y)) {
+        if (Math.abs(enemy.pos.x - enemy.moveTo.x) < 1
+            && Math.abs(enemy.pos.y - enemy.moveTo.y) < 1
+        ) {
           enemy.moveTo.x = this.randomInt(0, this.canvas.width - enemy.size);
           enemy.moveTo.y = this.randomInt(0, this.canvas.height - enemy.size);
         }
@@ -294,12 +308,26 @@ const Game = {
         let xCoordinate;
         let yCoordinate;
 
-        if (Math.abs(enemy.pos.x - enemy.moveTo.x) > Math.abs(enemy.pos.y - enemy.moveTo.y)) {
-          xCoordinate = enemy.pos.x > enemy.moveTo.x ? enemy.pos.x - enemy.speed : enemy.pos.x + enemy.speed;
-          yCoordinate = this.getYCoordinate(xCoordinate, enemy.pos, enemy.moveTo);
+        if (Math.abs(enemy.pos.x - enemy.moveTo.x)
+            > Math.abs(enemy.pos.y - enemy.moveTo.y)
+        ) {
+          xCoordinate = enemy.pos.x > enemy.moveTo.x
+                        ? enemy.pos.x - enemy.speed
+                        : enemy.pos.x + enemy.speed;
+          yCoordinate = this.getYCoordinate(
+            xCoordinate,
+            enemy.pos,
+            enemy.moveTo,
+          );
         } else {
-          yCoordinate = enemy.pos.y > enemy.moveTo.y ? enemy.pos.y - enemy.speed : enemy.pos.y + enemy.speed;
-          xCoordinate = this.getXCoordinate(yCoordinate, enemy.pos, enemy.moveTo);
+          yCoordinate = enemy.pos.y > enemy.moveTo.y
+                        ? enemy.pos.y - enemy.speed
+                        : enemy.pos.y + enemy.speed;
+          xCoordinate = this.getXCoordinate(
+            yCoordinate,
+            enemy.pos,
+            enemy.moveTo,
+          );
         }
 
         enemy.pos.x = xCoordinate;
@@ -320,14 +348,22 @@ const Game = {
            && entity1.size + entity1.pos.y + area / 2 > entity2.pos.y
   },
   testCollisionPlayerAndCircle(coin) {
-    const distX = Math.abs(coin.pos.x - this.player.pos.x - this.player.size / 2);
-    const distY = Math.abs(coin.pos.y - this.player.pos.y - this.player.size / 2);
+    const distX = Math.abs(
+      coin.pos.x - this.player.pos.x - this.player.size / 2,
+    );
+    const distY = Math.abs(
+      coin.pos.y - this.player.pos.y - this.player.size / 2,
+    );
 
-    if (distX > (this.player.size / 2 + coin.size) || distY > (this.player.size / 2 + coin.size)) {
+    if (distX > (this.player.size / 2 + coin.size)
+        || distY > (this.player.size / 2 + coin.size)
+    ) {
       return false;
     }
 
-    if (distX <= (this.player.size / 2) || distY <= (this.player.size / 2)) {
+    if (distX <= (this.player.size / 2)
+        || distY <= (this.player.size / 2)
+    ) {
       return true;
     }
 
@@ -336,7 +372,9 @@ const Game = {
     return (dx * dx + dy * dy <= (coin.size * coin.size));
   },
   checkSaving() {
-    let saveCount = this.enemies.filter((enemy) => this.checkSizeDifference(enemy) === 'save').length;
+    let saveCount = this.enemies.filter(
+      (enemy) => this.checkSizeDifference(enemy) === 'save',
+    ).length;
     let dangerousCount = 0;
     while (saveCount < 5) {
       this.createEnemy(true);
@@ -363,7 +401,10 @@ const Game = {
   checkBonuses() {
     this.bonuses.forEach((bonus) => {
       const bonusesCount = this.getBonusesCount(bonus.name);
-      if (bonusesCount < bonus.maxCount && bonus.spawnCondition.call(this) && this.randomNumber() < bonus.spawnChance) {
+      if (bonusesCount < bonus.maxCount
+          && bonus.spawnCondition.call(this)
+          && this.randomNumber() < bonus.spawnChance
+      ) {
         this.createBonus(bonus);
       }
     });
@@ -391,7 +432,13 @@ const Game = {
     this.player.size += exp;
     this.player.pos.x -= exp / 2;
     this.player.pos.y -= exp / 2;
-    this.createScore(Object.assign({}, enemy.pos, { score: exp * this.scaleCoefficient }));
+    this.createScore(Object.assign(
+      {},
+      enemy.pos,
+      {
+        score: exp * this.scaleCoefficient,
+      },
+    ));
     this.enemies.splice(index, 1);
     this.score += exp * this.scaleCoefficient;
   },
@@ -401,7 +448,9 @@ const Game = {
     ) * 2;
   },
   checkPlayerSize() {
-    if (this.canvas.height / this.player.size < 10 || this.canvas.width / this.player.size < 10) {
+    if (this.canvas.height / this.player.size < 10
+        || this.canvas.width / this.player.size < 10
+    ) {
       this.scaleGameField();
     }
   },
@@ -421,9 +470,11 @@ const Game = {
   handleMouseDown(e) {
     e.preventDefault();
     this.mousePosition = this.getMousePosition(e);
-    const matchHorizontal = this.mousePosition.x - this.player.pos.x < this.player.size
+    const matchHorizontal = (this.mousePosition.x - this.player.pos.x
+                             < this.player.size)
                             && this.mousePosition.x > this.player.pos.x;
-    const matchVertical = this.mousePosition.y - this.player.pos.y < this.player.size
+    const matchVertical = (this.mousePosition.y - this.player.pos.y
+                           < this.player.size)
                           && this.mousePosition.y > this.player.pos.y;
 
     if (matchHorizontal && matchVertical) {
@@ -484,13 +535,41 @@ const Game = {
         this.keys[event.keyCode].pressed = false;
       }
     });
-    this.canvas.addEventListener('mousedown', (event) => this.handleMouseDown.call(this, event), false);
-    this.canvas.addEventListener('touchstart', (event) => this.handleMouseDown.call(this, event), false);
-    this.canvas.addEventListener('mouseup', (event) => this.handleMouseUp.call(this, event), false);
-    this.canvas.addEventListener('touchend', (event) => this.handleMouseUp.call(this, event), false);
-    this.canvas.addEventListener('mouseout', (event) => this.handleMouseOut.call(this, event), false);
-    this.canvas.addEventListener('mousemove', (event) => this.handleMouseMove.call(this, event), false);
-    this.canvas.addEventListener('touchmove', (event) => this.handleMouseMove.call(this, event), false);
+    this.canvas.addEventListener(
+      'mousedown',
+      (event) => this.handleMouseDown.call(this, event),
+      false,
+    );
+    this.canvas.addEventListener(
+      'touchstart',
+      (event) => this.handleMouseDown.call(this, event),
+      false,
+    );
+    this.canvas.addEventListener(
+      'mouseup',
+      (event) => this.handleMouseUp.call(this, event),
+      false,
+    );
+    this.canvas.addEventListener(
+      'touchend',
+      (event) => this.handleMouseUp.call(this, event),
+      false,
+    );
+    this.canvas.addEventListener(
+      'mouseout',
+      (event) => this.handleMouseOut.call(this, event),
+      false,
+    );
+    this.canvas.addEventListener(
+      'mousemove',
+      (event) => this.handleMouseMove.call(this, event),
+      false,
+    );
+    this.canvas.addEventListener(
+      'touchmove',
+      (event) => this.handleMouseMove.call(this, event),
+      false,
+    );
     setInterval(() => {
       this.updateFPS();
     }, 1000);
@@ -527,7 +606,9 @@ const Game = {
     });
     this.activeBonuses.forEach((bonus, index) => {
       if (this.testCollisionPlayerAndCircle(bonus)) {
-        const bonusConstruct = this.bonuses.filter(b => b.name === bonus.name)[0];
+        const bonusConstruct = this.bonuses.filter(
+          b => b.name === bonus.name,
+        )[0];
         bonusConstruct.action.call(this, bonus, index);
         this.activeBonuses.splice(index, 1);
       }
