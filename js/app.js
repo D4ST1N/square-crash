@@ -17,6 +17,62 @@ const Game = {
     dangerousColor: 'rgba(255, 87, 34, .25)',
     dangerousBorderColor: 'rgba(244,81,30 ,1)',
   },
+  bonuses: [
+    {
+      maxCount:    3,
+      name:        'coin',
+      spawnChance: 0.05,
+      color:       'rgba(255,235,59 ,.4)',
+      borderColor: 'rgba(251,192,45 ,1)',
+      spawnCondition() {
+        return true;
+      },
+      action(bonus) {
+        this.createScore(Object.assign({}, bonus.pos, { score: 100 * this.scaleCoefficient }));
+        this.score += 100 * this.scaleCoefficient;
+      },
+    },
+    {
+      name: 'freeze',
+      maxCount: 2,
+      spawnChance: 0.075,
+      color: 'rgba(38,198,218 ,1)',
+      borderColor: 'rgba(0,151,167 ,1)',
+      spawnCondition() {
+        return this.enemyMoves;
+      },
+      action() {
+        console.log(this.freeze);
+        this.freeze = true;
+        this.planner.push(
+          {
+            start: performance.now(),
+            time: 10000,
+            run() {
+              this.freeze = false;
+            },
+          },
+        );
+      },
+    },
+    {
+      name: 'Allah Akbar',
+      maxCount: 1,
+      spawnChance: 0.025,
+      color: 'rgba(120,144,156 ,1)',
+      borderColor: 'rgba(69,90,100 ,1)',
+      spawnCondition() {
+        return true;
+      },
+      action() {
+        this.enemies.forEach((enemy, index) => {
+          this.enemyKill(enemy, index);
+        });
+      },
+    },
+  ],
+  activeBonuses: [],
+  planner: [],
   keys: {
     37: {
       pressed: false
@@ -32,6 +88,8 @@ const Game = {
     },
   },
   isPressed: false,
+  enemyMoves: false,
+  freeze: false,
   scaleCoefficient: 1,
   enemyMaxNumber: 20,
   fps: 0,
@@ -40,7 +98,6 @@ const Game = {
   highScore: 0,
   player: {},
   enemies: [],
-  coins: [],
   scores: [],
   canvas: undefined,
   scoreBoard: undefined,
@@ -83,7 +140,7 @@ const Game = {
       speed: 0.25 * this.scaleCoefficient,
     };
 
-    while (this.testCollision(this.player, enemy)) {
+    while (this.testCollision(this.player, enemy, this.player.size * 2)) {
       enemy.pos.x = this.randomInt(0, this.canvas.width - enemySize);
       enemy.pos.y = this.randomInt(0, this.canvas.width - enemySize);
     }
@@ -103,17 +160,18 @@ const Game = {
 
     this.enemies.push(enemy);
   },
-  createCoin() {
-    const coin = {
+  createBonus({ color, borderColor, name }) {
+    const bonus = {
       pos:  {
         x: this.randomInt(0, this.canvas.width - 40),
         y: this.randomInt(0, this.canvas.height - 40),
       },
-      color: this.gameConstants.coinColor,
-      borderColor: this.gameConstants.coinBorderColor,
       size: 20,
+      borderColor,
+      color,
+      name,
     };
-    this.coins.push(coin);
+    this.activeBonuses.push(bonus);
   },
   createPlayer() {
     this.player = {
@@ -255,13 +313,13 @@ const Game = {
   getXCoordinate(y, pos1, pos2) {
     return (y - pos1.y) * (pos2.x - pos1.x) / (pos2.y - pos1.y) + pos1.x;
   },
-  testCollision(entity1, entity2) {
-    return entity1.pos.x < entity2.pos.x + entity2.size
-           && entity1.pos.x + entity1.size > entity2.pos.x
-           && entity1.pos.y < entity2.pos.y + entity2.size
-           && entity1.size + entity1.pos.y > entity2.pos.y
+  testCollision(entity1, entity2, area = 0) {
+    return entity1.pos.x - area / 2 < entity2.pos.x + entity2.size
+           && entity1.pos.x + entity1.size + area / 2 > entity2.pos.x
+           && entity1.pos.y - area / 2 < entity2.pos.y + entity2.size
+           && entity1.size + entity1.pos.y + area / 2 > entity2.pos.y
   },
-  testCollisionPlayerAndCoin(coin) {
+  testCollisionPlayerAndCircle(coin) {
     const distX = Math.abs(coin.pos.x - this.player.pos.x - this.player.size / 2);
     const distY = Math.abs(coin.pos.y - this.player.pos.y - this.player.size / 2);
 
@@ -299,6 +357,25 @@ const Game = {
       }
     })
   },
+  getBonusesCount(name) {
+    return this.activeBonuses.filter(bonus => bonus.name === name).length;
+  },
+  checkBonuses() {
+    this.bonuses.forEach((bonus) => {
+      const bonusesCount = this.getBonusesCount(bonus.name);
+      if (bonusesCount < bonus.maxCount && bonus.spawnCondition.call(this) && this.randomNumber() < bonus.spawnChance) {
+        this.createBonus(bonus);
+      }
+    });
+  },
+  checkPlanner(now) {
+    this.planner.forEach((task, index) => {
+      if (now - task.start > task.time) {
+        task.run.call(this);
+        this.planner.splice(index, 1);
+      }
+    });
+  },
   death() {
     this.player.size = 0;
     cancelAnimationFrame(this.raf);
@@ -309,8 +386,19 @@ const Game = {
       this.restart();
     }
   },
+  enemyKill(enemy, index) {
+    const exp = (Math.round(enemy.size / 8) || 1);
+    this.player.size += exp;
+    this.player.pos.x -= exp / 2;
+    this.player.pos.y -= exp / 2;
+    this.createScore(Object.assign({}, enemy.pos, { score: exp * this.scaleCoefficient }));
+    this.enemies.splice(index, 1);
+    this.score += exp * this.scaleCoefficient;
+  },
   changeMaxEnemiesCount() {
-    this.enemyMaxNumber = Math.round(Math.cbrt(this.canvas.width * this.canvas.height / this.player.size));
+    this.enemyMaxNumber = Math.round(
+      Math.cbrt(this.canvas.width * this.canvas.height / this.player.size),
+    ) * 2;
   },
   checkPlayerSize() {
     if (this.canvas.height / this.player.size < 10 || this.canvas.width / this.player.size < 10) {
@@ -405,7 +493,7 @@ const Game = {
     this.canvas.addEventListener('touchmove', (event) => this.handleMouseMove.call(this, event), false);
     setInterval(() => {
       this.updateFPS();
-    }, 500);
+    }, 1000);
   },
   update(delta) {
     if (this.oldScore !== this.score) {
@@ -415,7 +503,8 @@ const Game = {
     this.changeMaxEnemiesCount();
     this.checkPlayerSize();
 
-    if (this.score > 100) {
+    if (this.score >= 100 && this.freeze !== true) {
+      this.enemyMoves = true;
       this.checkEnemiesMoving();
     }
 
@@ -427,13 +516,7 @@ const Game = {
         const difference = this.checkSizeDifference(enemy);
 
         if (difference === 'save') {
-          const exp = (Math.round(enemy.size / 8) || 1);
-          this.player.size += exp;
-          this.player.pos.x -= exp / 2;
-          this.player.pos.y -= exp / 2;
-          this.createScore(Object.assign({}, enemy.pos, { score: exp * this.scaleCoefficient }));
-          this.enemies.splice(index, 1);
-          this.score += exp * this.scaleCoefficient;
+          this.enemyKill(enemy, index);
         } else if (difference === 'dangerously') {
           this.death();
         } else {
@@ -442,11 +525,11 @@ const Game = {
         }
       }
     });
-    this.coins.forEach((coin, index) => {
-      if (this.testCollisionPlayerAndCoin(coin)) {
-        this.createScore(Object.assign({}, coin.pos, { score: 100 * this.scaleCoefficient }));
-        this.coins.splice(index, 1);
-        this.score += 100 * this.scaleCoefficient;
+    this.activeBonuses.forEach((bonus, index) => {
+      if (this.testCollisionPlayerAndCircle(bonus)) {
+        const bonusConstruct = this.bonuses.filter(b => b.name === bonus.name)[0];
+        bonusConstruct.action.call(this, bonus, index);
+        this.activeBonuses.splice(index, 1);
       }
     });
     this.scores.forEach((score, index) => {
@@ -469,15 +552,16 @@ const Game = {
 
     this.renderEntity(this.player, true);
     this.enemies.forEach((enemy) => this.renderEntity(enemy));
-    this.coins.forEach((coin) => this.renderCircle(coin, true));
+    this.activeBonuses.forEach((bonus) => this.renderCircle(bonus));
     this.scores.forEach((score) => this.renderScore(score));
   },
   main() {
-    this.gameTick = performance.now() - this.lastTime;
+    const now = performance.now();
+    this.gameTick = now - this.lastTime;
     const delta = this.gameTick / 1000;
     this.fps = Math.round(1 / delta);
-    this.lastTime = performance.now();
-    if (this.gameTick)
+    this.lastTime = now;
+    this.checkPlanner(now);
     this.update(this.gameTick);
     this.render();
 
@@ -487,10 +571,7 @@ const Game = {
       this.createEnemy();
     }
 
-    if (this.randomNumber() <= this.gameConstants.coinSpawnChance && this.coins.length < 2) {
-      this.createCoin();
-    }
-
+    this.checkBonuses();
     this.raf = requestAnimationFrame(this.main.bind(this));
   },
   start() {
@@ -499,7 +580,12 @@ const Game = {
   },
   restart() {
     this.score = 0;
+    this.scaleCoefficient = 1;
+    this.enemyMoves = false;
+    this.freeze = false;
+    console.log(this.freeze);
     this.enemies = [];
+    this.bonuses = [];
     this.createPlayer();
   }
 };
