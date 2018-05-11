@@ -21,7 +21,7 @@ const Game = {
     {
       maxCount:    3,
       name:        'coin',
-      spawnChance: 0.05,
+      spawnChance: 0.15,
       color:       'rgba(255,235,59 ,.4)',
       borderColor: 'rgba(251,192,45 ,1)',
       spawnCondition() {
@@ -32,10 +32,10 @@ const Game = {
           {},
           bonus.pos,
           {
-            score: 100 * this.scaleCoefficient,
+            score: 100 * this.scaleCoefficient * this.scoreMultiplier,
           },
         ));
-        this.score += 100 * this.scaleCoefficient;
+        this.score += 100 * this.scaleCoefficient * this.scoreMultiplier;
       },
     },
     {
@@ -48,17 +48,108 @@ const Game = {
         return this.enemyMoves;
       },
       action() {
-        console.log(this.freeze);
+        const bonusTime = 10000;
+        const now = performance.now();
         this.freeze = true;
-        this.planner.push(
-          {
-            start: performance.now(),
-            time: 10000,
-            run() {
-              this.freeze = false;
+
+        if (this.isActiveBonus('freeze')) {
+          this.continueBonus('freeze', bonusTime)
+        } else {
+          this.planner.push(
+            {
+              start: now,
+              time:  bonusTime,
+              type:  'freeze',
+              run() {
+                this.freeze = false;
+              },
             },
-          },
-        );
+          );
+          this.progresses.push(
+            {
+              type:  'freeze',
+              color: 'rgba(38,198,218 ,.4)',
+              start: now,
+              time:  bonusTime,
+            },
+          );
+        }
+      },
+    },
+    {
+      name: 'x3',
+      maxCount: 1,
+      spawnChance: 0.05,
+      color: 'rgba(205,220,57 ,1)',
+      borderColor: 'rgba(158,157,36 ,1)',
+      spawnCondition() {
+        return true;
+      },
+      action() {
+        const bonusTime = 10000;
+        const now = performance.now();
+        this.scoreMultiplier = 3;
+
+        if (this.isActiveBonus('x3')) {
+          this.continueBonus('x3', bonusTime)
+        } else {
+          this.planner.push(
+            {
+              start: now,
+              time:  bonusTime,
+              type:  'x3',
+              run() {
+                this.scoreMultiplier = 1;
+              },
+            },
+          );
+          this.progresses.push(
+            {
+              type:  'x3',
+              color: 'rgba(205,220,57 ,.4)',
+              start: now,
+              time:  bonusTime,
+            },
+          );
+        }
+      },
+    },
+    {
+      name: 'Leeroy Jenkins',
+      maxCount: 1,
+      spawnChance: 0.025,
+      color: 'rgba(126,87,194 ,1)',
+      borderColor: 'rgba(81,45,168 ,1)',
+      spawnCondition() {
+        return true;
+      },
+      action() {
+        const bonusTime = 4000;
+        const now = performance.now();
+        this.playerImmune = true;
+
+        if (this.isActiveBonus('Leeroy Jenkins')) {
+          this.continueBonus('Leeroy Jenkins', bonusTime)
+        } else {
+          this.planner.push(
+            {
+              start: now,
+              time:  bonusTime,
+              type:  'Leeroy Jenkins',
+              run() {
+                this.playerImmune = false;
+              },
+            },
+          );
+          this.progresses.push(
+            {
+              type:  'Leeroy Jenkins',
+              color: 'rgba(126,87,194 ,.4)',
+              start: now,
+              time:  bonusTime,
+            },
+          );
+        }
       },
     },
     {
@@ -79,6 +170,7 @@ const Game = {
   ],
   activeBonuses: [],
   planner: [],
+  progresses: [],
   keys: {
     37: {
       pressed: false
@@ -98,6 +190,8 @@ const Game = {
   freeze: false,
   scaleCoefficient: 1,
   enemyMaxNumber: 20,
+  scoreMultiplier: 1,
+  playerImmune: false,
   fps: 0,
   score: 0,
   oldScore: 0,
@@ -130,7 +224,7 @@ const Game = {
   },
   createEnemy(save = false) {
     const minSize = Math.round(this.player.size * 0.10);
-    const maxCoefficient = Math.min(Math.pow(0.87, this.scaleCoefficient), 3);
+    const maxCoefficient = Math.min(Math.pow(0.87, this.scaleCoefficient), 2.25);
     const maxSize = save
                     ? Math.round(this.player.size * 0.65)
                     : Math.round(this.player.size * (1 / maxCoefficient));
@@ -192,16 +286,17 @@ const Game = {
       }
     };
   },
-  createScore({ x, y, score }) {
+  createScore({ x, y, score, color = 'rgba(0,137,123 ,.6)', isPlainText = false }) {
     this.scores.push(
       {
-        text: `+${score}`,
+        text: isPlainText ? score : `+ ${score}`,
         pos: {
           x,
           y,
         },
         time: 1000,
         speed: 1,
+        color,
       }
     )
   },
@@ -251,7 +346,12 @@ const Game = {
     }
 
     this.ctx.fillStyle = entity.color;
-    this.ctx.fillRect(entity.pos.x, entity.pos.y, entity.size, entity.size);
+    this.ctx.fillRect(
+      entity.pos.x,
+      entity.pos.y,
+      typeof entity.size === 'object' ? entity.size.width : entity.size,
+      typeof entity.size === 'object' ? entity.size.height : entity.size,
+    );
 
     if (entity.borderColor) {
       this.ctx.strokeStyle = entity.borderColor;
@@ -263,13 +363,13 @@ const Game = {
     this.ctx.beginPath();
     this.ctx.arc(circle.pos.x, circle.pos.y, circle.size, 0, 2 * Math.PI);
     this.ctx.fill();
-    this.ctx.closePath();
     this.ctx.strokeStyle = circle.borderColor;
     this.ctx.stroke();
+    this.ctx.closePath();
   },
   renderScore(score) {
     this.ctx.font = '24px cursive';
-    this.ctx.fillStyle = 'rgba(0,137,123 ,.6)';
+    this.ctx.fillStyle = score.color;
     this.ctx.fillText(score.text, score.pos.x, score.pos.y);
   },
   checkMoving(delta) {
@@ -417,6 +517,49 @@ const Game = {
       }
     });
   },
+  checkProgresses(now) {
+    this.progresses.forEach((progress, index) => {
+      const timePass = now - progress.start;
+      if (timePass > progress.time) {
+        this.progresses.splice(index, 1);
+      } else {
+        const percent = timePass / progress.time;
+        const maxWidth = this.canvas.width - 40;
+        const width = Math.min((maxWidth) * percent, maxWidth);
+        this.renderEntity(
+          {
+            pos:   {
+              x: 20,
+              y: this.canvas.height - 40 * (index + 1),
+            },
+            size:  {
+              height: 20,
+              width: maxWidth - width,
+            },
+            color: progress.color,
+          },
+          true,
+        );
+        this.renderScore(
+          {
+            text: `${((progress.time - timePass) / 1000).toFixed(1)}s`,
+            pos: {
+              x: 30,
+              y:this.canvas.height - 40 * (index + 1) - 10
+            },
+            color: 'rgba(255, 255, 255, .8)'
+          }
+        )
+      }
+    });
+  },
+  isActiveBonus(name) {
+    return !!this.planner.filter(task => task.type === name).length;
+  },
+  continueBonus(name, time) {
+    this.planner.filter(task => task.type === name)[0].time += time;
+    this.progresses.filter(progress => progress.type === name)[0].time += time;
+  },
   death() {
     this.player.size = 0;
     cancelAnimationFrame(this.raf);
@@ -436,22 +579,31 @@ const Game = {
       {},
       enemy.pos,
       {
-        score: exp * this.scaleCoefficient,
+        score: exp * this.scaleCoefficient * this.scoreMultiplier,
       },
     ));
     this.enemies.splice(index, 1);
-    this.score += exp * this.scaleCoefficient;
+    this.score += exp * this.scaleCoefficient * this.scoreMultiplier;
   },
   changeMaxEnemiesCount() {
     this.enemyMaxNumber = Math.round(
       Math.cbrt(this.canvas.width * this.canvas.height / this.player.size),
-    ) * 2;
+    );
   },
   checkPlayerSize() {
     if (this.canvas.height / this.player.size < 10
         || this.canvas.width / this.player.size < 10
     ) {
       this.scaleGameField();
+      this.createScore(Object.assign(
+        {},
+        this.player.pos,
+        {
+          score: 'Level UP!',
+          color: 'rgba(255, 255, 255, .8)',
+          isPlainText: true,
+        },
+      ));
     }
   },
   scaleGameField() {
@@ -592,15 +744,19 @@ const Game = {
       const collision = this.testCollision(this.player, enemy);
 
       if (collision) {
-        const difference = this.checkSizeDifference(enemy);
-
-        if (difference === 'save') {
+        if (this.playerImmune) {
           this.enemyKill(enemy, index);
-        } else if (difference === 'dangerously') {
-          this.death();
         } else {
-          this.player.size -= Math.round(enemy.size / 8);
-          enemy.size -= Math.round(this.player.size / 4);
+          const difference = this.checkSizeDifference(enemy);
+
+          if (difference === 'save') {
+            this.enemyKill(enemy, index);
+          } else if (difference === 'dangerously') {
+            this.death();
+          } else {
+            this.player.size -= Math.round(enemy.size / 8);
+            enemy.size -= Math.round(this.player.size / 4);
+          }
         }
       }
     });
@@ -627,7 +783,7 @@ const Game = {
       this.checkSaving();
     }
   },
-  render() {
+  render(now) {
     this.ctx.fillStyle = 'rgba(176,190,197 ,1)';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -635,6 +791,7 @@ const Game = {
     this.enemies.forEach((enemy) => this.renderEntity(enemy));
     this.activeBonuses.forEach((bonus) => this.renderCircle(bonus));
     this.scores.forEach((score) => this.renderScore(score));
+    this.checkProgresses(now);
   },
   main() {
     const now = performance.now();
@@ -644,7 +801,7 @@ const Game = {
     this.lastTime = now;
     this.checkPlanner(now);
     this.update(this.gameTick);
-    this.render();
+    this.render(now);
 
     if (this.randomNumber() <= this.gameConstants.enemySpawnChance
         && this.enemies.length <= this.enemyMaxNumber
@@ -662,11 +819,14 @@ const Game = {
   restart() {
     this.score = 0;
     this.scaleCoefficient = 1;
+    this.scoreMultiplier = 1;
     this.enemyMoves = false;
+    this.playerImmune = false;
     this.freeze = false;
-    console.log(this.freeze);
     this.enemies = [];
     this.bonuses = [];
+    this.progresses = [];
+    this.planner = [];
     this.createPlayer();
   }
 };
