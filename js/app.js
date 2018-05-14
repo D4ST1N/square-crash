@@ -7,9 +7,6 @@ const Game = {
   gameConstants: {
     canvasBorderWidth: 5,
     enemySpawnChance: 5,
-    coinSpawnChance: 0.05,
-    coinColor: 'rgba(255,235,59 ,.4)',
-    coinBorderColor: 'rgba(251,192,45 ,1)',
     saveColor: 'rgba(129, 199, 132, .25)',
     saveBorderColor: 'rgba(67,160,71 ,1)',
     warningColor: 'rgba(255, 183, 77, .25)',
@@ -21,9 +18,8 @@ const Game = {
     {
       maxCount:    3,
       name:        'coin',
-      spawnChance: 0.15,
-      color:       'rgba(255,235,59 ,.4)',
-      borderColor: 'rgba(251,192,45 ,1)',
+      spawnChance: 0.025,
+      src: 'img/bonuses/coin.png',
       spawnCondition() {
         return true;
       },
@@ -41,9 +37,8 @@ const Game = {
     {
       name: 'freeze',
       maxCount: 2,
-      spawnChance: 0.075,
-      color: 'rgba(38,198,218 ,1)',
-      borderColor: 'rgba(0,151,167 ,1)',
+      spawnChance: 0.05,
+      src: 'img/bonuses/freeze.png',
       spawnCondition() {
         return this.enemyMoves;
       },
@@ -79,7 +74,7 @@ const Game = {
     {
       name: 'x3',
       maxCount: 1,
-      spawnChance: 0.05,
+      spawnChance: 0.025,
       color: 'rgba(205,220,57 ,1)',
       borderColor: 'rgba(158,157,36 ,1)',
       spawnCondition() {
@@ -117,7 +112,7 @@ const Game = {
     {
       name: 'Leeroy Jenkins',
       maxCount: 1,
-      spawnChance: 0.025,
+      spawnChance: 0.0125,
       color: 'rgba(126,87,194 ,1)',
       borderColor: 'rgba(81,45,168 ,1)',
       spawnCondition() {
@@ -155,9 +150,8 @@ const Game = {
     {
       name: 'Allah Akbar',
       maxCount: 1,
-      spawnChance: 0.025,
-      color: 'rgba(120,144,156 ,1)',
-      borderColor: 'rgba(69,90,100 ,1)',
+      spawnChance: 0.0125,
+      src: 'img/bonuses/bomb.png',
       spawnCondition() {
         return true;
       },
@@ -168,6 +162,7 @@ const Game = {
       },
     },
   ],
+  version: '0.3.3',
   activeBonuses: [],
   planner: [],
   progresses: [],
@@ -222,12 +217,21 @@ const Game = {
       y: event.clientY || event.changedTouches[0].pageY - rect.top
     };
   },
+  loadResources() {
+    this.bonuses.forEach((bonus) => {
+      if (bonus.src) {
+        const img = new Image();
+        img.onload = () => {
+          bonus.pattern = img;
+        };
+        img.src = bonus.src;
+      }
+    })
+  },
   createEnemy(save = false) {
     const minSize = Math.round(this.player.size * 0.10);
-    const maxCoefficient = Math.min(Math.pow(0.87, this.scaleCoefficient), 2.25);
-    const maxSize = save
-                    ? Math.round(this.player.size * 0.65)
-                    : Math.round(this.player.size * (1 / maxCoefficient));
+    const maxCoefficient = Math.min(1 / Math.pow(0.87, this.scaleCoefficient), 2.25);
+    const maxSize = Math.round(this.player.size * (save ? 0.65 : maxCoefficient));
     const enemySize = this.randomInt(minSize, maxSize);
     const enemy = {
       pos:  {
@@ -262,7 +266,7 @@ const Game = {
 
     this.enemies.push(enemy);
   },
-  createBonus({ color, borderColor, name }) {
+  createBonus({ color, borderColor, name, pattern }) {
     const bonus = {
       pos:  {
         x: this.randomInt(20, this.canvas.width - 20),
@@ -270,6 +274,7 @@ const Game = {
       },
       size: 20,
       borderColor,
+      pattern,
       color,
       name,
     };
@@ -309,11 +314,19 @@ const Game = {
 
     if (this.highScore < this.score) {
       this.highScore = this.score;
-      localStorage.setItem('highScore', this.highScore.toString());
+      localStorage.setItem(
+        'highScore',
+        JSON.stringify(
+          {
+            score:   this.highScore,
+            version: this.version,
+          },
+        ),
+      );
     }
 
     if (this.highScore) {
-      this.highScoreBoard.innerHTML = `High score: ${this.highScore}`;
+      this.highScoreBoard.innerHTML = `High score: ${this.highScore.score}`;
     }
   },
   updateFPS() {
@@ -359,13 +372,29 @@ const Game = {
     }
   },
   renderCircle(circle) {
-    this.ctx.fillStyle = circle.color;
-    this.ctx.beginPath();
-    this.ctx.arc(circle.pos.x, circle.pos.y, circle.size, 0, 2 * Math.PI);
-    this.ctx.fill();
-    this.ctx.strokeStyle = circle.borderColor;
-    this.ctx.stroke();
-    this.ctx.closePath();
+    if (circle.pattern) {
+      this.ctx.save();
+      this.ctx.beginPath();
+      this.ctx.arc(circle.pos.x, circle.pos.y, circle.size, 0, 2 * Math.PI);
+      this.ctx.closePath();
+      this.ctx.clip();
+      this.ctx.drawImage(circle.pattern, circle.pos.x - circle.size, circle.pos.y - circle.size);
+      this.ctx.beginPath();
+      this.ctx.arc(circle.pos.x, circle.pos.y, circle.size, 0, 2 * Math.PI);
+      this.ctx.closePath();
+      this.ctx.restore();
+    } else {
+      this.ctx.fillStyle = circle.color;
+      this.ctx.beginPath();
+      this.ctx.arc(circle.pos.x, circle.pos.y, circle.size, 0, 2 * Math.PI);
+      this.ctx.fill();
+    }
+
+    if (circle.borderColor) {
+      this.ctx.strokeStyle = circle.borderColor;
+      this.ctx.stroke();
+      this.ctx.closePath();
+    }
   },
   renderScore(score) {
     this.ctx.font = '24px cursive';
@@ -408,6 +437,7 @@ const Game = {
         let xCoordinate;
         let yCoordinate;
 
+        console.log(enemy);
         if (Math.abs(enemy.pos.x - enemy.moveTo.x)
             > Math.abs(enemy.pos.y - enemy.moveTo.y)
         ) {
@@ -429,6 +459,8 @@ const Game = {
             enemy.moveTo,
           );
         }
+
+        console.log(xCoordinate, yCoordinate);
 
         enemy.pos.x = xCoordinate;
         enemy.pos.y = yCoordinate;
@@ -666,12 +698,17 @@ const Game = {
     this.canvas.height = window.innerHeight - 4;
     this.scoreBoard.className = 'scoreboard';
     this.highScoreBoard.className = 'high-scoreboard';
-    const highScore = localStorage.getItem('highScore');
+    let highScore = localStorage.getItem('highScore');
 
     if (highScore) {
-      this.highScore = highScore;
+      highScore = JSON.parse(highScore);
+
+      if (highScore.version === this.version) {
+        this.highScore = highScore;
+      }
     }
 
+    this.loadResources();
     this.updateScore();
     const app = document.getElementById('app');
     app.appendChild(this.canvas);
@@ -724,6 +761,7 @@ const Game = {
     );
     setInterval(() => {
       this.updateFPS();
+      window.debug = this;
     }, 1000);
   },
   update(delta) {
@@ -793,8 +831,7 @@ const Game = {
     this.scores.forEach((score) => this.renderScore(score));
     this.checkProgresses(now);
   },
-  main() {
-    const now = performance.now();
+  main(now) {
     this.gameTick = now - this.lastTime;
     const delta = this.gameTick / 1000;
     this.fps = Math.round(1 / delta);
@@ -810,7 +847,7 @@ const Game = {
     }
 
     this.checkBonuses();
-    this.raf = requestAnimationFrame(this.main.bind(this));
+    this.raf = requestAnimationFrame(now => this.main(now));
   },
   start() {
     this.createPlayer();
