@@ -19,7 +19,7 @@ const Game = {
       maxCount:    3,
       name:        'coin',
       spawnChance: 0.025,
-      src: 'img/bonuses/coin.png',
+      src: 'img/bonuses/v2/coin.png',
       spawnCondition() {
         return true;
       },
@@ -38,7 +38,7 @@ const Game = {
       name: 'freeze',
       maxCount: 2,
       spawnChance: 0.05,
-      src: 'img/bonuses/freeze.png',
+      src: 'img/bonuses/v2/freeze.png',
       spawnCondition() {
         return this.enemyMoves;
       },
@@ -75,8 +75,7 @@ const Game = {
       name: 'x3',
       maxCount: 1,
       spawnChance: 0.025,
-      color: 'rgba(205,220,57 ,1)',
-      borderColor: 'rgba(158,157,36 ,1)',
+      src: 'img/bonuses/v2/x3.png',
       spawnCondition() {
         return true;
       },
@@ -113,8 +112,7 @@ const Game = {
       name: 'Leeroy Jenkins',
       maxCount: 1,
       spawnChance: 0.0125,
-      color: 'rgba(126,87,194 ,1)',
-      borderColor: 'rgba(81,45,168 ,1)',
+      src: 'img/bonuses/v2/shield.png',
       spawnCondition() {
         return true;
       },
@@ -151,7 +149,7 @@ const Game = {
       name: 'Allah Akbar',
       maxCount: 1,
       spawnChance: 0.0125,
-      src: 'img/bonuses/bomb.png',
+      src: 'img/bonuses/v2/bomb.png',
       spawnCondition() {
         return true;
       },
