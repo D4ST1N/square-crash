@@ -74,6 +74,73 @@ export default {
     };
   },
 
+  getYCoordinate(x, pos1, pos2) {
+    return (x - pos1.x) * (pos2.y - pos1.y) / (pos2.x - pos1.x) + pos1.y;
+  },
+
+  getXCoordinate(y, pos1, pos2) {
+    return (y - pos1.y) * (pos2.x - pos1.x) / (pos2.y - pos1.y) + pos1.x;
+  },
+
+  enemiesMoves(enemy) {
+    const field = getCanvas();
+    if (Math.abs(enemy.pos.x - enemy.moveTo.x) < 1
+        && Math.abs(enemy.pos.y - enemy.moveTo.y) < 1
+    ) {
+      enemy.moveTo.x = randomInt(0, field.width - enemy.size);
+      enemy.moveTo.y = randomInt(0, field.height - enemy.size);
+    }
+
+    let xCoordinate;
+    let yCoordinate;
+
+    if (Math.abs(enemy.pos.x - enemy.moveTo.x)
+        > Math.abs(enemy.pos.y - enemy.moveTo.y)
+    ) {
+      xCoordinate = enemy.pos.x > enemy.moveTo.x
+                    ? enemy.pos.x - enemy.speed
+                    : enemy.pos.x + enemy.speed;
+      yCoordinate = this.getYCoordinate(
+        xCoordinate,
+        enemy.pos,
+        enemy.moveTo,
+      );
+    } else {
+      yCoordinate = enemy.pos.y > enemy.moveTo.y
+                    ? enemy.pos.y - enemy.speed
+                    : enemy.pos.y + enemy.speed;
+      xCoordinate = this.getXCoordinate(
+        yCoordinate,
+        enemy.pos,
+        enemy.moveTo,
+      );
+    }
+
+    enemy.pos.x = xCoordinate;
+    enemy.pos.y = yCoordinate;
+  },
+
+  checkForMagnet(player, enemy) {
+    const isInMagnetArea = collision.test.rectRect(
+      {
+        pos:  {
+          x: player.pos.x - player.magnetArea(),
+          y: player.pos.y - player.magnetArea(),
+        },
+        size: player.size + player.magnetArea(),
+      },
+      enemy,
+    );
+
+    if (isInMagnetArea) {
+      enemy.moveTo = {
+        x: player.pos.x + player.size / 2,
+        y: player.pos.y + player.size / 2,
+      };
+      this.enemiesMoves(enemy);
+    }
+  },
+
   getEnemies(player) {
     this.enemies.forEach((enemy, index) => {
       if (enemy.isKilled) {
@@ -86,6 +153,14 @@ export default {
       if (isCollide) {
         player.collideWithEnemy(enemy);
       }
+
+      if (player.freezeEnemies === false) {
+        this.enemiesMoves(enemy);
+      }
+
+      if (player.magnetEnabled) {
+        this.checkForMagnet(player, enemy);
+      }
     });
 
     const field = getCanvas();
@@ -96,5 +171,13 @@ export default {
     }
 
     return this.enemies;
-  }
-}
+  },
+
+  killAll(player) {
+    this.enemies.forEach(enemy => player.getExp(enemy));
+  },
+
+  clear() {
+    this.enemies = [];
+  },
+};

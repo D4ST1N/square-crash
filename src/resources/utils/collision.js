@@ -25,6 +25,6 @@ export default {
       const dy = distY - rect.size / 2;
 
       return (dx * dx + dy * dy <= (circle.size * circle.size));
-    }
-  }
+    },
+  },
 }
