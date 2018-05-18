@@ -19,6 +19,23 @@ export default class Player extends Entity {
       x: 0,
       y: 0,
     };
+    this.playerExperienceTable = [
+      0,
+      25,
+      50,
+      80,
+      130,
+      200,
+      300,
+      450,
+      640,
+      860,
+      1100,
+      1400,
+      1800,
+      2300,
+      3000,
+    ];
   }
 
   magnetArea() {
@@ -83,6 +100,7 @@ export default class Player extends Entity {
     this.pos.x -= exp / 2;
     this.pos.y -= exp / 2;
     this.experience += exp;
+    $event.$emit('expChanged', this.experience);
     this.checkExperience();
     $event.$emit(
       'scoreGained',
@@ -94,9 +112,12 @@ export default class Player extends Entity {
   }
 
   checkExperience() {
-    if (this.experience >= 100) {
+    const expToLevelUp = this.playerExperienceTable[this.level];
+
+    if (this.experience >= expToLevelUp) {
       this.level += 1;
-      this.experience -= 100;
+      this.experience -= expToLevelUp;
+      $event.$emit('expChanged', this.experience);
       this.size = this.initialSize;
     }
   }

@@ -1,7 +1,8 @@
 <template>
   <div id="app">
     <canvas id="field"></canvas>
-    <scoreboard :count="enemies.length" :player="player"/>
+    <scoreboard :count="enemies.length" />
+    <playerStatus :player="player" />
     <gameOverModal @restartGame="restart" />
   </div>
 </template>
@@ -15,6 +16,7 @@
   import keysData      from './mock-data/keys';
   import scoreboard    from './components/scoreboard';
   import gameOverModal from './components/subwindow/game-over-modal';
+  import playerStatus  from './components/player-status';
   import $event        from './resources/utils/events';
   import './assets/styles/buttons.scss';
 
@@ -23,6 +25,7 @@
     components: {
       scoreboard,
       gameOverModal,
+      playerStatus,
     },
 
     data() {
@@ -46,27 +49,21 @@
       this.init();
       this.start();
       bonusesData.loadTextures();
-      $event.$on('enemyKill', bonusesData.checkBonusSpawn.bind(bonusesData));
+      $event.$on('enemyKill', bonusesData.checkBonusSpawn.bind(bonusesData, this.player));
       $event.$on('scoreGained', this.createGainedScore);
       $event.$on('plannedTask', this.addTask);
     },
 
     methods:    {
       addTask(options) {
-        const existedTask = this.tasks.filter(
-          task => task.name === options.name,
-        )[0];
+        const existedTask = this.tasks.filter(task => task.name === options.name)[0];
+        options.time = Array.apply(null, Array(this.player.level))
+                            .reduce(sum => sum += sum * 0.1, options.time);
 
         if (existedTask) {
           existedTask.time += options.time;
         } else {
-          this.tasks.push(Object.assign(
-            {},
-            options,
-            {
-              start: performance.now(),
-            },
-          ));
+          this.tasks.push(Object.assign({}, options, { start: performance.now() }));
         }
       },
 

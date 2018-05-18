@@ -179,7 +179,7 @@ export default {
     });
   },
 
-  checkBonusSpawn() {
+  checkBonusSpawn(player) {
     this.bonusesData.forEach((bonusData) => {
       if (this.bonuses.length < this.maxBonusesCount) {
         const total = this.bonuses.filter(bonus => bonus.name === bonusData.name).length;
@@ -188,8 +188,8 @@ export default {
           const field = getCanvas();
           this.bonuses.push(new Bonus({
             pos:     {
-              x: randomInt(20, field.width - 20),
-              y: randomInt(20, field.height - 20),
+              x: randomInt(player.pos.x - field.width / 2, player.pos.x + field.width / 2),
+              y: randomInt(player.pos.y - field.height / 2, player.pos.y + field.height / 2),
             },
             size:    20,
             name:    bonusData.name,

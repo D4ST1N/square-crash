@@ -21,7 +21,7 @@
     mounted() {
       this.setInitialHighScore();
       $event.$on('scoreGained', this.scoreGain);
-      $event.$on('gameRestart', this.resetScore);
+      $event.$on('restartGame', this.resetScore);
     },
 
     methods: {
