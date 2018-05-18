@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <canvas id="field"></canvas>
-    <scoreboard />
+    <scoreboard :count="enemies.length" :player="player"/>
     <gameOverModal @restartGame="restart" />
   </div>
 </template>
@@ -80,53 +80,109 @@
         }));
       },
 
-      renderRectangle(rect) {
+      renderRectangle(rect, isFixed = false) {
         if (typeof rect.pos !== 'object') {
           return;
+        }
+
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (!isFixed) {
+          offsetX = this.player.getOffset().x;
+          offsetY = this.player.getOffset().y;
         }
 
         this.ctx.save();
         this.ctx.fillStyle = rect.color;
         this.ctx.fillRect(
-          rect.pos.x,
-          rect.pos.y,
+          rect.pos.x - offsetX,
+          rect.pos.y - offsetY,
           typeof rect.size === 'object' ? rect.size.width : rect.size,
           typeof rect.size === 'object' ? rect.size.height : rect.size,
         );
 
         if (rect.border) {
           this.ctx.strokeStyle = rect.border;
-          this.ctx.strokeRect(rect.pos.x, rect.pos.y, rect.size, rect.size);
+          this.ctx.strokeRect(
+            rect.pos.x - offsetX,
+            rect.pos.y - offsetY,
+            rect.size,
+            rect.size,
+          );
         }
 
         this.ctx.restore();
       },
 
-      renderCircle(circle) {
+      renderCircle(circle, isFixed = false) {
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (!isFixed) {
+          offsetX = this.player.getOffset().x;
+          offsetY = this.player.getOffset().y;
+        }
+
         this.ctx.save();
-        this.ctx.beginPath();
-        this.ctx.arc(circle.pos.x, circle.pos.y, circle.size, 0, 2 * Math.PI);
-        this.ctx.closePath();
-        this.ctx.clip();
-        this.ctx.drawImage(
-          circle.pattern,
-          circle.pos.x - circle.size,
-          circle.pos.y - circle.size,
-        );
-        this.ctx.beginPath();
-        this.ctx.arc(circle.pos.x, circle.pos.y, circle.size, 0, 2 * Math.PI);
-        this.ctx.closePath();
+
+        if (circle.pattern) {
+          this.ctx.beginPath();
+          this.ctx.arc(
+            circle.pos.x - offsetX,
+            circle.pos.y - offsetY,
+            circle.size,
+            0,
+            2 * Math.PI,
+          );
+          this.ctx.closePath();
+          this.ctx.clip();
+          this.ctx.drawImage(
+            circle.pattern,
+            circle.pos.x - circle.size - offsetX,
+            circle.pos.y - circle.size - offsetY,
+          );
+          this.ctx.beginPath();
+          this.ctx.arc(
+            circle.pos.x - offsetX,
+            circle.pos.y - offsetY,
+            circle.size,
+            0,
+            2 * Math.PI,
+          );
+          this.ctx.closePath();
+        } else {
+          this.ctx.fillStyle = circle.color;
+          this.ctx.beginPath();
+          this.ctx.arc(
+            circle.pos.x - offsetX,
+            circle.pos.y - offsetY,
+            circle.size,
+            0,
+            2 * Math.PI,
+          );
+          this.ctx.fill();
+        }
+
         this.ctx.restore();
       },
 
-      renderText(text) {
+      renderText(text, isFixed = false) {
         if (!text || typeof text.pos !== 'object') {
           return;
         }
 
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (!isFixed) {
+          offsetX = this.player.getOffset().x;
+          offsetY = this.player.getOffset().y;
+        }
+
         this.ctx.font      = text.font;
         this.ctx.fillStyle = text.color;
-        this.ctx.fillText(text.text, text.pos.x, text.pos.y);
+        this.ctx.fillText(text.text, text.pos.x - offsetX, text.pos.y - offsetY);
       },
 
       handleKeyDown(e) {
@@ -240,11 +296,23 @@
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.enemies.forEach(enemy => this.renderRectangle(enemy));
         this.bonuses.forEach(bonus => this.renderCircle(bonus));
+
+        if (this.player.magnetEnabled) {
+          this.renderCircle({
+            pos:   {
+              x: this.player.pos.x + this.player.size / 2,
+              y: this.player.pos.y + this.player.size / 2,
+            },
+            size:  this.player.magnetArea(),
+            color: this.player.magnetAreaColor,
+          });
+        }
+
         this.renderRectangle(this.player);
         this.texts.forEach(text => this.renderText(text));
         this.tasks.forEach((task) => {
-          this.renderRectangle(task);
-          this.renderText(task.text);
+          this.renderRectangle(task, true);
+          this.renderText(task.text, true);
         });
       },
     },

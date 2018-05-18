@@ -14,6 +14,11 @@ export default class Player extends Entity {
     this.playerImmune = false;
     this.freezeEnemies = false;
     this.magnetEnabled = false;
+    this.magnetAreaColor = 'rgba(38, 166, 154, .2)';
+    this.offset = {
+      x: 0,
+      y: 0,
+    };
   }
 
   magnetArea() {
@@ -72,8 +77,8 @@ export default class Player extends Entity {
     }
   }
 
-  getExp(enemy) {
-    const exp = (Math.round(enemy.size / 8) || 1);
+  getExp(enemy, modifier = 1) {
+    const exp = (Math.round(enemy.size / 8) || 1) * modifier;
     this.size += exp;
     this.pos.x -= exp / 2;
     this.pos.y -= exp / 2;
@@ -101,19 +106,31 @@ export default class Player extends Entity {
     $event.$emit('playerDeath', this);
   }
 
+  getOffset() {
+    return this.offset;
+  }
+
+  scale(coefficient) {
+    this.size = this.size / coefficient;
+  }
+
   moveLeft() {
+    this.offset.x -= this.speed;
     this.pos.x -= this.speed;
   }
 
   moveRight() {
+    this.offset.x += this.speed;
     this.pos.x += this.speed;
   }
 
   moveUp() {
+    this.offset.y -= this.speed;
     this.pos.y -= this.speed;
   }
 
   moveDown() {
+    this.offset.y += this.speed;
     this.pos.y += this.speed;
   }
 }

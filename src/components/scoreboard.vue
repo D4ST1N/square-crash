@@ -23,7 +23,7 @@
       $event.$on('scoreGained', this.scoreGain);
       $event.$on('gameRestart', this.resetScore);
     },
-    
+
     methods: {
       resetScore() {
         this.score = 0;

@@ -11,9 +11,7 @@ export default {
       const distX = Math.abs(circle.pos.x - rect.pos.x - rect.size / 2);
       const distY = Math.abs(circle.pos.y - rect.pos.y - rect.size / 2);
 
-      if (distX > (rect.size / 2 + circle.size)
-          || distY > (rect.size / 2 + circle.size)
-      ) {
+      if (distX > (rect.size / 2 + circle.size) || distY > (rect.size / 2 + circle.size)) {
         return false;
       }
 

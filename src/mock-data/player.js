@@ -1,4 +1,4 @@
-import randomInt from '../resources/utils/randomInt';
+import getCanvas from '../resources/utils/getCanvas';
 
 export default {
   playerData: {
@@ -8,10 +8,12 @@ export default {
   },
 
   getData() {
+    const field = getCanvas();
+
     return {
       pos:   {
-        x: randomInt(),
-        y: randomInt(),
+        x: field.width / 2 - this.playerData.size / 2,
+        y: field.height / 2 - this.playerData.size / 2,
       },
       level: 1,
       size:  this.playerData.size,

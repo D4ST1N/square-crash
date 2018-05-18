@@ -52,6 +52,7 @@
       restart() {
         this.$emit('restartGame');
         $event.$emit('restartGame');
+        this.hideModal();
       },
     },
   }
