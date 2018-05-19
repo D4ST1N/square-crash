@@ -21,7 +21,12 @@ export default {
   watch: {
     show() {
       this.isWindowShow = this.show;
-      this.$emit('onToggle', this.isWindowShow);
+
+      if (this.show) {
+        this.$emit('onShow');
+      } else {
+        this.$emit('onHide');
+      }
     },
   },
 

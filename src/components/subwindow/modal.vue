@@ -1,8 +1,15 @@
 <template>
   <div class="subwindow">
     <transition name="subwindow" :duration="10000">
-      <div class="subwindow__overlay" v-if="isWindowShow">
-        <div class="subwindow__helper">
+      <div :class="{'subwindow__overlay': true, 'subwindow__overlay--clickable': isWindowShow}" v-if="isWindowShow">
+        <div
+          ref="container"
+          class="subwindow__helper"
+          :style="{
+            left: `${left}px`,
+            top: `${top}px`,
+          }"
+        >
           <div class="subwindow__wrapper">
             <header class="subwindow__header">
               <h1 class="subwindow__title">{{ title }}</h1>
@@ -29,11 +36,21 @@
   export default {
     name: "modal",
     mixins: [subwindow],
+    props: {
+      left: {
+        type: Number,
+        default: 0,
+      },
+      top: {
+        type: Number,
+        default: 0,
+      },
+    },
 
     mounted() {},
   }
 </script>
 
-<style scoped>
+<style>
 
 </style>

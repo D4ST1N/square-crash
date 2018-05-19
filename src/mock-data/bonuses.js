@@ -33,6 +33,10 @@ export default {
       name: 'magnet',
       url: 'img/bonuses/magnet.png',
     },
+    {
+      name: 'player shield',
+      url: 'img/bonuses/player-shield.png',
+    },
   ],
   bonuses: [],
   maxBonusesCount: 6,
@@ -64,7 +68,7 @@ export default {
       name: 'freeze',
       spawnChance: 2,
       maxCount: 2,
-      time: 20000,
+      time: 15000,
       color: 'rgba(30, 136, 229, .5)',
 
       action(player) {
@@ -84,7 +88,7 @@ export default {
       name: 'x3',
       spawnChance: 2,
       maxCount: 2,
-      time: 7500,
+      time: 12000,
       color: 'rgba(251, 140, 0, .5)',
 
       action(player) {
@@ -104,7 +108,7 @@ export default {
       name: 'shield',
       spawnChance: 0.5,
       maxCount: 1,
-      time: 5000,
+      time: 8000,
       color: 'rgba(142, 36, 170, .5)',
 
       action(player) {
@@ -186,15 +190,17 @@ export default {
 
         if (total < bonusData.maxCount && randomNumber() < bonusData.spawnChance) {
           const field = getCanvas();
-          this.bonuses.push(new Bonus({
+          const bonus = new Bonus({
             pos:     {
-              x: randomInt(player.pos.x - field.width / 2, player.pos.x + field.width / 2),
-              y: randomInt(player.pos.y - field.height / 2, player.pos.y + field.height / 2),
+              x: randomInt(player.pos.x - field.width / 4, player.pos.x + field.width / 4),
+              y: randomInt(player.pos.y - field.height / 4, player.pos.y + field.height / 4),
             },
             size:    20,
             name:    bonusData.name,
             pattern: resources.get(bonusData.name),
-          }));
+          });
+          this.bonuses.push(bonus);
+          $event.$emit('bonusSpawned', bonus);
         }
       }
     });

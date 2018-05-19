@@ -7,9 +7,9 @@ export default class Entity {
   }
 
   scale(coefficient) {
-    const difference = this.size / coefficient;
-    this.size = difference;
-    this.pos.x -= difference / 2;
-    this.pos.y -= difference / 2;
+    const newSize = this.size * coefficient;
+    this.pos.x += (this.size - newSize) / 2;
+    this.pos.y += (this.size - newSize) / 2;
+    this.size = newSize;
   }
 }

@@ -118,7 +118,6 @@ export default class Player extends Entity {
       this.level += 1;
       this.experience -= expToLevelUp;
       $event.$emit('expChanged', this.experience);
-      this.size = this.initialSize;
     }
   }
 
@@ -129,10 +128,6 @@ export default class Player extends Entity {
 
   getOffset() {
     return this.offset;
-  }
-
-  scale(coefficient) {
-    this.size = this.size / coefficient;
   }
 
   moveLeft() {

@@ -1,10 +1,17 @@
 export default {
   test: {
-    rectRect(rect1, rect2, area = 0) {
-      return rect1.pos.x - area / 2 < rect2.pos.x + rect2.size
-             && rect1.pos.x + rect1.size + area / 2 > rect2.pos.x
-             && rect1.pos.y - area / 2 < rect2.pos.y + rect2.size
-             && rect1.size + rect1.pos.y + area / 2 > rect2.pos.y;
+    squareSquare(square1, square2, area = 0) {
+      return square1.pos.x - area / 2 < square2.pos.x + square2.size
+             && square1.pos.x + square1.size + area / 2 > square2.pos.x
+             && square1.pos.y - area / 2 < square2.pos.y + square2.size
+             && square1.size + square1.pos.y + area / 2 > square2.pos.y;
+    },
+
+    rectRect(rect1, rect2) {
+      return rect1.pos.x < rect2.pos.x + rect2.size.width
+        && rect1.pos.x + rect1.size.width > rect2.pos.x
+        && rect1.pos.y < rect2.pos.y + rect2.size.height
+        && rect1.size.height + rect1.pos.y > rect2.pos.y;
     },
 
     rectCircle(rect, circle) {

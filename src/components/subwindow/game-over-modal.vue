@@ -1,15 +1,15 @@
 <template>
   <div class="game-over-modal">
     <modal
-      title="Oh, hell!"
-      content="You're die! But you can start again!"
+      :title="$text('GAME_OVER.TITLE')"
+      :content="$text('GAME_OVER.CONTENT')"
       :show="show"
       @onHide="hideModal"
     >
       <p slot="content">
-        Your score: {{ score }}
+        {{ $text('GAME_OVER.SCORE') }}: {{ score }}
       </p>
-      <button slot="footer" class="button" @click="restart">Start Again!</button>
+      <button ref="restart" slot="footer" class="button" @click="restart">{{ $text('GAME_OVER.BUTTON') }}</button>
     </modal>
   </div>
 </template>
@@ -43,6 +43,9 @@
 
       showModal() {
         this.show = true;
+        this.$nextTick(() => {
+          this.$refs.restart.focus();
+        })
       },
 
       hideModal() {

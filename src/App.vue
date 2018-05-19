@@ -1,23 +1,26 @@
 <template>
   <div id="app">
     <canvas id="field"></canvas>
-    <scoreboard :count="enemies.length" />
+    <scoreboard/>
     <playerStatus :player="player" />
     <gameOverModal @restartGame="restart" />
+    <bonusDescription :player="player"/>
   </div>
 </template>
 
 <script>
-  import Player        from './entities/player';
-  import Text          from './entities/text';
-  import playerData    from './mock-data/player';
-  import enemiesData   from './mock-data/enemies';
-  import bonusesData   from './mock-data/bonuses';
-  import keysData      from './mock-data/keys';
-  import scoreboard    from './components/scoreboard';
-  import gameOverModal from './components/subwindow/game-over-modal';
-  import playerStatus  from './components/player-status';
-  import $event        from './resources/utils/events';
+  import Player           from './entities/player';
+  import Text             from './entities/text';
+  import playerData       from './mock-data/player';
+  import enemiesData      from './mock-data/enemies';
+  import bonusesData      from './mock-data/bonuses';
+  import keysData         from './mock-data/keys';
+  import scoreboard       from './components/scoreboard';
+  import gameOverModal    from './components/subwindow/game-over-modal';
+  import bonusDescription from './components/subwindow/bonus-description';
+  import playerStatus     from './components/player-status';
+  import $event           from './resources/utils/events';
+  import resources        from './resources/utils/resources';
   import './assets/styles/buttons.scss';
 
   export default {
@@ -26,21 +29,25 @@
       scoreboard,
       gameOverModal,
       playerStatus,
+      bonusDescription,
     },
 
     data() {
       return {
-        canvas:   undefined,
-        ctx:      undefined,
-        gameTick: undefined,
-        lastTime: undefined,
-        raf:      undefined,
-        player:   undefined,
-        enemies:  [],
-        bonuses:  [],
-        texts:    [],
-        tasks:    [],
-        keys:     keysData,
+        canvas:         undefined,
+        ctx:            undefined,
+        gameTick:       undefined,
+        lastTime:       undefined,
+        raf:            undefined,
+        player:         undefined,
+        enemies:        [],
+        bonuses:        [],
+        texts:          [],
+        tasks:          [],
+        keys:           keysData,
+        scaleActivated: false,
+        isPaused:       false,
+        scaleCount:     0,
       };
     },
 
@@ -52,6 +59,8 @@
       $event.$on('enemyKill', bonusesData.checkBonusSpawn.bind(bonusesData, this.player));
       $event.$on('scoreGained', this.createGainedScore);
       $event.$on('plannedTask', this.addTask);
+      $event.$on('pauseGame', this.pause);
+      $event.$on('continueGame', this.continue);
     },
 
     methods:    {
@@ -125,13 +134,7 @@
 
         if (circle.pattern) {
           this.ctx.beginPath();
-          this.ctx.arc(
-            circle.pos.x - offsetX,
-            circle.pos.y - offsetY,
-            circle.size,
-            0,
-            2 * Math.PI,
-          );
+          this.ctx.arc(circle.pos.x - offsetX, circle.pos.y - offsetY, circle.size, 0, 2 * Math.PI);
           this.ctx.closePath();
           this.ctx.clip();
           this.ctx.drawImage(
@@ -140,24 +143,12 @@
             circle.pos.y - circle.size - offsetY,
           );
           this.ctx.beginPath();
-          this.ctx.arc(
-            circle.pos.x - offsetX,
-            circle.pos.y - offsetY,
-            circle.size,
-            0,
-            2 * Math.PI,
-          );
+          this.ctx.arc(circle.pos.x - offsetX, circle.pos.y - offsetY, circle.size, 0, 2 * Math.PI);
           this.ctx.closePath();
         } else {
           this.ctx.fillStyle = circle.color;
           this.ctx.beginPath();
-          this.ctx.arc(
-            circle.pos.x - offsetX,
-            circle.pos.y - offsetY,
-            circle.size,
-            0,
-            2 * Math.PI,
-          );
+          this.ctx.arc(circle.pos.x - offsetX, circle.pos.y - offsetY, circle.size, 0, 2 * Math.PI);
           this.ctx.fill();
         }
 
@@ -182,6 +173,21 @@
         this.ctx.fillText(text.text, text.pos.x - offsetX, text.pos.y - offsetY);
       },
 
+      renderImage(pos, size, image, isFixed = false) {
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (isFixed === false) {
+          offsetX = this.player.getOffset().x;
+          offsetY = this.player.getOffset().y;
+        }
+
+        this.ctx.save();
+        this.ctx.globalAlpha = 0.8;
+        this.ctx.drawImage(image, pos.x - offsetX, pos.y - offsetY, size, size);
+        this.ctx.restore();
+      },
+
       handleKeyDown(e) {
         if (Object.prototype.hasOwnProperty.call(this.keys, e.key)) {
           this.keys[e.key].pressed = true;
@@ -195,11 +201,22 @@
       },
 
       checkPlayerSize() {
-        if (this.canvas.height / this.player.size < 10
-            || this.canvas.width / this.player.size < 10
+        if ((this.canvas.height / this.player.size < 10
+            || this.canvas.width / this.player.size < 10)
+            && this.scaleActivated === false
         ) {
-          this.player.scale(3);
-          this.enemies.forEach(enemy => enemy.scale(3));
+          this.scaleCount = 40;
+          this.scaleActivated = true;
+        }
+
+        if (this.scaleActivated === true) {
+          this.player.scale(0.973);
+          this.enemies.forEach(enemy => enemy.scale(0.973));
+          this.scaleCount -= 1;
+
+          if (this.scaleCount === 0) {
+            this.scaleActivated = false;
+          }
         }
       },
 
@@ -249,9 +266,22 @@
         this.canvas.width  = window.innerWidth;
         this.canvas.height = window.innerHeight - 4;
         this.player        = new Player(playerData.getData());
+        document.body.addEventListener('keydown', this.handleKeyDown);
+        document.body.addEventListener('keyup', this.handleKeyUp);
       },
 
       start() {
+        this.isPaused = false;
+        this.main(performance.now());
+      },
+
+      pause() {
+        this.isPaused = true;
+      },
+
+      continue() {
+        this.isPaused = false;
+        cancelAnimationFrame(this.raf);
         this.main(performance.now());
       },
 
@@ -260,17 +290,18 @@
         enemiesData.clear();
         bonusesData.clear();
         this.texts = [];
+        this.tasks = [];
       },
 
       main(now) {
-        this.gameTick = now - this.lastTime;
-        this.lastTime = now;
-        this.update();
-        this.render(now);
-        this.tasks.forEach(this.checkTasks);
-        this.raf = requestAnimationFrame(now => this.main(now));
-        document.body.addEventListener('keydown', this.handleKeyDown);
-        document.body.addEventListener('keyup', this.handleKeyUp);
+        if (this.isPaused === false) {
+          this.gameTick = now - this.lastTime;
+          this.lastTime = now;
+          this.update();
+          this.render(now);
+          this.tasks.forEach(this.checkTasks);
+          this.raf = requestAnimationFrame(this.main);
+        }
       },
 
       update() {
@@ -292,7 +323,6 @@
       render() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.enemies.forEach(enemy => this.renderRectangle(enemy));
-        this.bonuses.forEach(bonus => this.renderCircle(bonus));
 
         if (this.player.magnetEnabled) {
           this.renderCircle({
@@ -306,6 +336,16 @@
         }
 
         this.renderRectangle(this.player);
+
+        if (this.player.playerImmune) {
+          this.renderImage(
+            this.player.pos,
+            this.player.size,
+            resources.get('player shield'),
+          );
+        }
+
+        this.bonuses.forEach(bonus => this.renderCircle(bonus));
         this.texts.forEach(text => this.renderText(text));
         this.tasks.forEach((task) => {
           this.renderRectangle(task, true);

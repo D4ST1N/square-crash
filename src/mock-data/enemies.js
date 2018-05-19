@@ -46,7 +46,7 @@ export default {
       speed:  0.25 * player.level,
     };
 
-    while (collision.test.rectRect(player, enemy, player.size * 2)) {
+    while (collision.test.squareSquare(player, enemy, player.size * 2)) {
       enemy.pos.x = randomInt(offsetX - field.width, offsetX + field.width);
       enemy.pos.y = randomInt(offsetY - field.height, offsetY + field.height);
     }
@@ -192,7 +192,7 @@ export default {
       }
 
       Object.assign(enemy, this.colorizeAccordingDifference(enemy, player));
-      const isCollide = collision.test.rectRect(player, enemy);
+      const isCollide = collision.test.squareSquare(player, enemy);
 
       if (isCollide) {
         player.collideWithEnemy(enemy);
@@ -202,7 +202,7 @@ export default {
         this.enemiesMoves(player, enemy);
       }
 
-      if (this.isEnemySafe(player, enemy)) {
+      if (this.isEnemySafe(player, enemy) || player.playerImmune) {
         safeEnemyCount += 1;
 
         if (player.magnetEnabled) {
@@ -211,9 +211,11 @@ export default {
       }
     });
 
-    const field = getCanvas();
-    const max   = Math.round(Math.cbrt(field.width * field.height / player.size)) * 3;
-    // const max = 25;
+    let max = Math.round((70 - (4 * player.level)) * (player.level * 0.35));
+
+    if (player.level > 9) {
+      max = Math.max(max, 100);
+    }
 
     if (safeEnemyCount < Math.round(this.enemies.length / 10)) {
       for (; 0 !== safeEnemyCount; safeEnemyCount -= 1) {

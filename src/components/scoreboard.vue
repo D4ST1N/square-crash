@@ -1,7 +1,7 @@
 <template>
   <div class="scoreboard">
-    <span class="scoreboard__score">Score: {{ score }}</span>
-    <span class="scoreboard__score">High Score: {{ highScore }}</span>
+    <span class="scoreboard__score">{{ $text('UI.SCORE') }}: {{ score }}</span>
+    <span class="scoreboard__score">{{ $text('UI.HIGH_SCORE') }}: {{ highScore }}</span>
   </div>
 </template>
 

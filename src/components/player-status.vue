@@ -47,7 +47,7 @@
         this.ctx.clearRect(0, 0, 60, 60);
         this.ctx.beginPath();
         this.ctx.arc(30, 30, 25, 0, 2 * Math.PI);
-        this.ctx.strokeStyle = 'rgba(207,216,220 ,1)';
+        this.ctx.strokeStyle = 'rgba(209,196,233 ,1)';
         this.ctx.lineWidth = 5;
         this.ctx.stroke();
       },

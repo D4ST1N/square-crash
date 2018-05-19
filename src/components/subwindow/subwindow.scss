@@ -6,6 +6,7 @@
   left: 0;
   z-index: 2;
   display: flex;
+  pointer-events: none;
 
   &__overlay {
     display: flex;
@@ -13,7 +14,12 @@
     align-items: center;
     justify-content: center;
     width: 100%;
+    pointer-events: none;
     transition: all .6s;
+
+    &--clickable {
+      pointer-events: all;
+    }
   }
 
   &__wrapper {
@@ -24,6 +30,10 @@
     color: rgba(255, 255, 255, 1);
     padding: 20px 40px 40px;
     max-width: 600px;
+  }
+
+  &__helper {
+    position: relative;
   }
 
   &-enter-active {

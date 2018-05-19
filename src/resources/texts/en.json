@@ -1,0 +1,26 @@
+{
+  "UI": {
+    "SCORE": "Score",
+    "HIGH_SCORE": "High Score"
+  },
+  "GAME_OVER": {
+    "TITLE": "Oh, hell!",
+    "CONTENT": "You're die! But you can start again!",
+    "SCORE": "Your score",
+    "BUTTON": "Start Again!"
+  },
+  "BONUS": {
+    "POPUP": {
+      "TITLE": "Wow, bonus spawned!",
+      "BUTTON": "Got it"
+    },
+    "DESCRIPTION": {
+      "COIN": "TBD",
+      "X3": "TBD",
+      "FREEZE": "TBD",
+      "BOMB": "TBD",
+      "SHIELD": "TBD",
+      "MAGNET": "TBD"
+    }
+  }
+}
