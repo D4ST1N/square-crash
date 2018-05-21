@@ -18,7 +18,7 @@
 </template>
 
 <script>
-  import subwindow from './subwindow';
+  import subwindow from './subwindow.mixin';
   import './subwindow.scss'
 
   export default {

@@ -3,6 +3,7 @@ import sizeStatus  from '../resources/utils/getSizeDifferenceStatus';
 import constants   from '../resources/constants';
 import bonusesData from '../mock-data/bonuses';
 import $event      from '../resources/utils/events';
+import toFixed     from '../resources/utils/toFixed';
 
 export default class Player extends Entity {
   constructor({ level, ...options }) {
@@ -20,21 +21,21 @@ export default class Player extends Entity {
       y: 0,
     };
     this.playerExperienceTable = [
-      0,
-      25,
-      50,
-      80,
-      130,
-      200,
-      300,
-      450,
-      640,
-      860,
-      1100,
-      1400,
-      1800,
-      2300,
-      3000,
+      0,     // 1
+      25,    // 2
+      50,    // 3
+      80,    // 4
+      130,   // 5
+      200,   // 6
+      300,   // 7
+      450,   // 8
+      640,   // 9
+      860,   // 10
+      1100,  // 11
+      1400,  // 12
+      1800,  // 13
+      2300,  // 14
+      3000,  // 15
     ];
   }
 
@@ -95,10 +96,11 @@ export default class Player extends Entity {
   }
 
   getExp(enemy, modifier = 1) {
-    const exp = (Math.round(enemy.size / 8) || 1) * modifier;
-    this.size += exp;
-    this.pos.x -= exp / 2;
-    this.pos.y -= exp / 2;
+    const exp = Number(toFixed(Math.max(enemy.size / 8, 1) * modifier));
+    const sizeChange = Math.round(exp);
+    this.size += sizeChange;
+    this.pos.x -= sizeChange / 2;
+    this.pos.y -= sizeChange / 2;
     this.experience += exp;
     $event.$emit('expChanged', this.experience);
     this.checkExperience();
@@ -116,6 +118,7 @@ export default class Player extends Entity {
 
     if (this.experience >= expToLevelUp) {
       this.level += 1;
+      $event.$emit('levelUp', this.level);
       this.experience -= expToLevelUp;
       $event.$emit('expChanged', this.experience);
     }

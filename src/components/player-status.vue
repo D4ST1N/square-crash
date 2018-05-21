@@ -5,13 +5,14 @@
       <canvas class="player-status__experience-progress" ref="field" width="60" height="60"></canvas>
     </div>
     <div v-if="player" class="player-status__experience">
-      {{ player.experience }} / {{ player.playerExperienceTable[player.level] }}
+      {{ toFixed(player.experience) }} / {{ player.playerExperienceTable[player.level] }}
     </div>
   </div>
 </template>
 
 <script>
-  import $event from '../resources/utils/events';
+  import $event  from '../resources/utils/events';
+  import toFixed from '../resources/utils/toFixed';
 
   export default {
     name: "player-status",
@@ -43,6 +44,8 @@
     },
 
     methods: {
+      toFixed,
+
       drawBaseCircle() {
         this.ctx.clearRect(0, 0, 60, 60);
         this.ctx.beginPath();

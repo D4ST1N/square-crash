@@ -48,6 +48,7 @@ export default {
       baseScoreGained: 100,
 
       action(player, bonus) {
+        $event.$emit('coinPicked');
         $event.$emit(
           'scoreGained',
           this.baseScoreGained * player.level * player.scoreMultipler,

@@ -1,6 +1,6 @@
 <template>
   <div class="subwindow">
-    <transition name="subwindow" :duration="10000">
+    <transition name="subwindow" :duration="500">
       <div :class="{'subwindow__overlay': true, 'subwindow__overlay--clickable': isWindowShow}" v-if="isWindowShow">
         <div
           ref="container"
@@ -30,7 +30,7 @@
 </template>
 
 <script>
-  import subwindow from './subwindow';
+  import subwindow from './subwindow.mixin';
   import './subwindow.scss'
 
   export default {

@@ -1,10 +1,15 @@
 <template>
   <div id="app">
-    <canvas id="field"></canvas>
-    <scoreboard/>
+    <canvas id="field" class="field"></canvas>
+    <canvas id="buffer" class="field--buffer"></canvas>
+    <!--<fps :fps="fps"/>-->
+    <scoreboard />
     <playerStatus :player="player" />
+    <mainMenu />
+    <localeMenu />
     <gameOverModal @restartGame="restart" />
     <bonusDescription :player="player"/>
+    <achievement />
   </div>
 </template>
 
@@ -18,10 +23,16 @@
   import scoreboard       from './components/scoreboard';
   import gameOverModal    from './components/subwindow/game-over-modal';
   import bonusDescription from './components/subwindow/bonus-description';
-  import playerStatus     from './components/player-status';
-  import $event           from './resources/utils/events';
-  import resources        from './resources/utils/resources';
+  import playerStatus from './components/player-status';
+  import mainMenu     from './components/main-menu';
+  import localeMenu   from './components/menu/locale-menu';
+  import fps          from './components/fps';
+  import achievement  from './components/achievement';
+  import $event       from './resources/utils/events';
+  import resources    from './resources/utils/resources';
+  import achievements from './resources/achievements';
   import './assets/styles/buttons.scss';
+  import toFixed      from './resources/utils/toFixed';
 
   export default {
     name:       'app',
@@ -30,12 +41,18 @@
       gameOverModal,
       playerStatus,
       bonusDescription,
+      mainMenu,
+      localeMenu,
+      fps,
+      achievement,
     },
 
     data() {
       return {
         canvas:         undefined,
         ctx:            undefined,
+        buffer:         undefined,
+        bctx:           undefined,
         gameTick:       undefined,
         lastTime:       undefined,
         raf:            undefined,
@@ -48,7 +65,17 @@
         scaleActivated: false,
         isPaused:       false,
         scaleCount:     0,
+        fps:            60,
+        bonusSpawned:   false,
+        coinCount:      0,
       };
+    },
+
+    created() {
+      resources.load({
+        name: 'bg',
+        url: 'img/bg.png'
+      });
     },
 
     mounted() {
@@ -61,6 +88,21 @@
       $event.$on('plannedTask', this.addTask);
       $event.$on('pauseGame', this.pause);
       $event.$on('continueGame', this.continue);
+      $event.$on('bonusSpawned', () => {
+        this.bonusSpawned = true;
+      });
+      $event.$on('levelUp', (level) => {
+        if (level === 3 && this.bonusSpawned === false) {
+          $event.$emit('achievementUnlocked', achievements.get('lucky'));
+        }
+      });
+      $event.$on('coinPicked', () => {
+        this.coinCount += 1;
+
+        if (this.coinCount === 13) {
+          $event.$emit('achievementUnlocked', achievements.get('devils dozen'));
+        }
+      });
     },
 
     methods:    {
@@ -81,9 +123,29 @@
           pos,
           speed: 1,
           size:  24,
-          color: 'rgba(255, 255, 255, 0.6)',
-          text:  `+ ${score}`,
+          color: 'rgba(3,169,244 ,.6)',
+          text:  `+ ${toFixed(score)}`,
         }));
+      },
+
+      renderBackground() {
+        const bg = resources.get('bg');
+        this.ctx.fillStyle = '#cbe0ea';
+        this.ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+        if (bg) {
+          const offsetX = this.player.getOffset().x / 3;
+          const offsetY = this.player.getOffset().y / 3;
+          this.bctx.fillStyle = this.bctx.createPattern(bg, 'repeat');
+          this.ctx.globalAlpha = 0.5;
+          this.bctx.translate(-offsetX, -offsetY);
+          this.bctx.fillRect(offsetX, offsetY, window.innerWidth, window.innerHeight);
+          this.bctx.translate(offsetX, offsetY);
+          this.ctx.drawImage(this.buffer, 0, 0);
+          this.bctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          this.bctx.restore();
+          this.ctx.globalAlpha = 1;
+        }
       },
 
       renderRectangle(rect, isFixed = false) {
@@ -254,7 +316,7 @@
               },
               size:  18,
               color: 'rgba(255, 255, 255, 0.6)',
-              text:  `${((task.time - timePass) / 1000).toFixed(1)}s`,
+              text:  `${toFixed((task.time - timePass) / 1000, 1)}s`,
             }),
           },
         );
@@ -263,8 +325,12 @@
       init() {
         this.canvas        = document.getElementById('field');
         this.ctx           = this.canvas.getContext('2d');
+        this.buffer        = document.getElementById('buffer');
+        this.bctx          = this.buffer.getContext('2d');
         this.canvas.width  = window.innerWidth;
         this.canvas.height = window.innerHeight - 4;
+        this.buffer.width  = window.innerWidth;
+        this.buffer.height = window.innerHeight - 4;
         this.player        = new Player(playerData.getData());
         document.body.addEventListener('keydown', this.handleKeyDown);
         document.body.addEventListener('keyup', this.handleKeyUp);
@@ -296,6 +362,8 @@
       main(now) {
         if (this.isPaused === false) {
           this.gameTick = now - this.lastTime;
+          const delta = this.gameTick / 1000;
+          this.fps = Math.round(1 / delta);
           this.lastTime = now;
           this.update();
           this.render(now);
@@ -322,6 +390,7 @@
 
       render() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.renderBackground();
         this.enemies.forEach(enemy => this.renderRectangle(enemy));
 
         if (this.player.magnetEnabled) {
@@ -370,5 +439,9 @@
     background-color: #cbe0ea;
     display: flex;
     flex-direction: column;
+  }
+
+  .field--buffer {
+    display: none;
   }
 </style>
