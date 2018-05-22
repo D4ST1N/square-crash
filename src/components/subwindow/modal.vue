@@ -10,7 +10,7 @@
             top: `${top}px`,
           }"
         >
-          <div class="subwindow__wrapper">
+          <div :class="{'subwindow__wrapper': true, 'subwindow__wrapper--wide': wide }">
             <header class="subwindow__header">
               <h1 class="subwindow__title">{{ title }}</h1>
               <slot name="header"></slot>

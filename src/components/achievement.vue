@@ -14,8 +14,9 @@
 </template>
 
 <script>
-  import $event    from '../resources/utils/events';
-  import randomInt from '../resources/utils/randomInt';
+  import $event                from '../resources/utils/events';
+  import randomInt             from '../resources/utils/randomInt';
+  import getAchievementsStatus from '../resources/utils/getAchievementsStatus';
 
   export default {
     name: "achievement",
@@ -34,25 +35,13 @@
 
     methods: {
       setAchievementUnlocked(name) {
-        const achievements = this.getAchievementsStatus();
+        const achievements = getAchievementsStatus();
         achievements[name] = true;
         localStorage.setItem('achievements', JSON.stringify(achievements))
       },
 
-      getAchievementsStatus(name) {
-        const achievementsData = localStorage.getItem('achievements');
-
-        if (achievementsData) {
-          const achievements = JSON.parse(achievementsData);
-
-          return name ? achievements[name] || null : achievements;
-        }
-
-        return name ? null : {};
-      },
-
       showAchievement(achievement) {
-        if (this.getAchievementsStatus(achievement.name)) {
+        if (getAchievementsStatus(achievement.name)) {
           return;
         }
 

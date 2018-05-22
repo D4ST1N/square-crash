@@ -30,6 +30,10 @@
     color: rgba(255, 255, 255, 1);
     padding: 20px 40px 40px;
     max-width: 600px;
+
+    &--wide {
+      max-width: 100%;
+    }
   }
 
   &__helper {

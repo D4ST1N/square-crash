@@ -6,6 +6,7 @@ import collision              from '../resources/utils/collision';
 import constants              from '../resources/constants';
 import randomNumber           from '../resources/utils/randomNumber';
 import getDistanceBetweenDots from '../resources/utils/getDistanceBetweenDots';
+import getAchievementsStatus  from '../resources/utils/getAchievementsStatus';
 
 export default {
   color:            {
@@ -193,6 +194,7 @@ export default {
 
       Object.assign(enemy, this.colorizeAccordingDifference(enemy, player));
       const isCollide = collision.test.squareSquare(player, enemy);
+      const isSave = this.isEnemySafe(player, enemy);
 
       if (isCollide) {
         player.collideWithEnemy(enemy);
@@ -202,7 +204,7 @@ export default {
         this.enemiesMoves(player, enemy);
       }
 
-      if (this.isEnemySafe(player, enemy) || player.playerImmune) {
+      if (isSave || player.playerImmune) {
         safeEnemyCount += 1;
 
         if (player.magnetEnabled) {
@@ -217,7 +219,9 @@ export default {
       max = Math.max(max, 100);
     }
 
-    if (safeEnemyCount < Math.round(this.enemies.length / 10)) {
+    const minSafeCountBonus = getAchievementsStatus('jason') ? 1.25 : 1;
+
+    if (safeEnemyCount < Math.round(this.enemies.length / 10 * minSafeCountBonus)) {
       for (; 0 !== safeEnemyCount; safeEnemyCount -= 1) {
         this.enemies.push(this.createEnemy(player, true));
       }

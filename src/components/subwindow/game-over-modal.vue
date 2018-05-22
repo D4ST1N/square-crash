@@ -7,7 +7,7 @@
       @onHide="hideModal"
     >
       <p slot="content">
-        {{ $text('GAME_OVER.SCORE') }}: {{ score }}
+        {{ $text('GAME_OVER.SCORE') }}: {{ toFixed(score) }}
       </p>
       <button ref="restart" slot="footer" class="button" @click="restart">{{ $text('GAME_OVER.BUTTON') }}</button>
     </modal>
@@ -15,8 +15,9 @@
 </template>
 
 <script>
-  import modal from './modal';
-  import $event from '../../resources/utils/events';
+  import modal   from './modal';
+  import $event  from '../../resources/utils/events';
+  import toFixed from '../../resources/utils/toFixed';
 
   export default {
     name: "game-over-modal",
@@ -37,6 +38,8 @@
     },
 
     methods: {
+      toFixed,
+
       setScore(score) {
         this.score = score;
       },

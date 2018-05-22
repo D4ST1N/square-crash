@@ -68,7 +68,7 @@
   };
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
   .player-status {
     position: fixed;
     top: 10px;
@@ -77,10 +77,15 @@
 
     &__wrapper {
       display: inline-flex;
-      width: 60px;
-      height: 60px;
+      width: 50px;
+      height: 50px;
       padding: 5px;
       position: relative;
+    }
+
+    &__experience {
+      margin-top: 10px;
+      text-align: center;
     }
 
     &__level {

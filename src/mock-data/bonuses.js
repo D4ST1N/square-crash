@@ -1,11 +1,12 @@
-import Bonus        from '../entities/bonus';
-import resources    from '../resources/utils/resources';
-import $event       from '../resources/utils/events';
-import randomNumber from '../resources/utils/randomNumber';
-import randomInt    from '../resources/utils/randomInt';
-import getCanvas    from '../resources/utils/getCanvas';
-import collision    from '../resources/utils/collision';
-import enemiesData  from './enemies';
+import Bonus                 from '../entities/bonus';
+import resources             from '../resources/utils/resources';
+import $event                from '../resources/utils/events';
+import randomNumber          from '../resources/utils/randomNumber';
+import randomInt             from '../resources/utils/randomInt';
+import getCanvas             from '../resources/utils/getCanvas';
+import collision             from '../resources/utils/collision';
+import enemiesData           from './enemies';
+import getAchievementsStatus from '../resources/utils/getAchievementsStatus';
 
 export default {
   textures: [
@@ -34,6 +35,10 @@ export default {
       url: 'img/bonuses/magnet.png',
     },
     {
+      name: 'knowledge',
+      url: 'img/bonuses/book.png',
+    },
+    {
       name: 'player shield',
       url: 'img/bonuses/player-shield.png',
     },
@@ -43,23 +48,30 @@ export default {
   bonusesData: [
     {
       name: 'coin',
-      spawnChance: 5,
       maxCount: 3,
       baseScoreGained: 100,
 
+      spawnChance() {
+        return 5;
+      },
+
       action(player, bonus) {
         $event.$emit('coinPicked');
+        const achievementBonus = getAchievementsStatus('devils dozen') ? 1.5 : 1;
         $event.$emit(
           'scoreGained',
-          this.baseScoreGained * player.level * player.scoreMultipler,
+          this.baseScoreGained * achievementBonus * player.level * player.scoreMultipler,
           Object.assign({}, bonus.pos),
         );
       },
     },
     {
       name: 'bomb',
-      spawnChance: 0.5,
       maxCount: 1,
+
+      spawnChance() {
+        return 0.5;
+      },
 
       action(player) {
         enemiesData.killAll(player);
@@ -67,10 +79,13 @@ export default {
     },
     {
       name: 'freeze',
-      spawnChance: 2,
       maxCount: 2,
       time: 15000,
       color: 'rgba(30, 136, 229, .5)',
+
+      spawnChance() {
+        return 2;
+      },
 
       action(player) {
         player.freezeEnemies = true;
@@ -87,10 +102,13 @@ export default {
     },
     {
       name: 'x3',
-      spawnChance: 2,
       maxCount: 2,
       time: 12000,
       color: 'rgba(251, 140, 0, .5)',
+
+      spawnChance() {
+        return 2;
+      },
 
       action(player) {
         player.scoreMultipler = 3;
@@ -107,18 +125,23 @@ export default {
     },
     {
       name: 'shield',
-      spawnChance: 0.5,
       maxCount: 1,
       time: 8000,
       color: 'rgba(142, 36, 170, .5)',
 
+      spawnChance() {
+        return 0.5;
+      },
+
       action(player) {
         player.playerImmune = true;
+        $event.$emit('shieldEnabled');
         $event.$emit(
           'plannedTask',
           {
             ...this,
             callback: (player) => {
+              $event.$emit('shieldDisabled');
               player.playerImmune = false;
             },
           },
@@ -127,22 +150,47 @@ export default {
     },
     {
       name: 'magnet',
-      spawnChance: 0.5,
       maxCount: 1,
       time: 10000,
       color: 'rgba(0, 137, 123, .5)',
 
+      spawnChance() {
+        return 0.5;
+      },
+
       action(player) {
         player.magnetEnabled = true;
+        $event.$emit('magnetEnabled');
         $event.$emit(
           'plannedTask',
           {
             ...this,
             callback: (player) => {
+              $event.$emit('magnetDisabled');
               player.magnetEnabled = false;
             },
           },
         );
+      },
+    },
+    {
+      name: 'knowledge',
+      maxCount: 1,
+      color: 'rgba(0, 137, 123, .5)',
+      baseExpGained: 100,
+
+      spawnChance() {
+        return getAchievementsStatus('thanos') ? 0.5 : 0;
+      },
+
+      action(player) {
+        const exp = this.baseExpGained * player.level;
+        player.size += exp;
+        player.pos.x -= exp / 2;
+        player.pos.y -= exp / 2;
+        player.experience += exp;
+        $event.$emit('expChanged', player.experience);
+        player.checkExperience();
       },
     },
   ],
@@ -187,24 +235,32 @@ export default {
   checkBonusSpawn(player) {
     this.bonusesData.forEach((bonusData) => {
       if (this.bonuses.length < this.maxBonusesCount) {
+        const spawnChanceBonus = getAchievementsStatus('lucky') ? 1.5 : 1;
+        const maxBonusCountBonus = getAchievementsStatus('gandhi') ? 1.5 : 1;
         const total = this.bonuses.filter(bonus => bonus.name === bonusData.name).length;
 
-        if (total < bonusData.maxCount && randomNumber() < bonusData.spawnChance) {
-          const field = getCanvas();
-          const bonus = new Bonus({
-            pos:     {
-              x: randomInt(player.pos.x - field.width / 4, player.pos.x + field.width / 4),
-              y: randomInt(player.pos.y - field.height / 4, player.pos.y + field.height / 4),
-            },
-            size:    20,
-            name:    bonusData.name,
-            pattern: resources.get(bonusData.name),
-          });
-          this.bonuses.push(bonus);
-          $event.$emit('bonusSpawned', bonus);
+        if (total < bonusData.maxCount * maxBonusCountBonus
+          && randomNumber() < bonusData.spawnChance() * spawnChanceBonus
+        ) {
+          this.spawnBonus(player, bonusData);
         }
       }
     });
+  },
+
+  spawnBonus(player, bonusData) {
+    const field = getCanvas();
+    const bonus = new Bonus({
+      pos:     {
+        x: randomInt(player.pos.x - field.width / 4, player.pos.x + field.width / 4),
+        y: randomInt(player.pos.y - field.height / 4, player.pos.y + field.height / 4),
+      },
+      size:    20,
+      name:    bonusData.name,
+      pattern: resources.get(bonusData.name),
+    });
+    this.bonuses.push(bonus);
+    $event.$emit('bonusSpawned', bonus);
   },
 
   clear() {

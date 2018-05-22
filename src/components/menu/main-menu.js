@@ -6,6 +6,10 @@ export default [
   // },
   {
     label: 'MAIN_MENU.ACHIEVEMENTS',
+
+    action() {
+      $event.$emit('showAchievementsProgress');
+    },
   },
   {
     label: 'MAIN_MENU.LOCALE',

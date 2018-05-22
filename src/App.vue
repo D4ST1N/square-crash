@@ -7,6 +7,7 @@
     <playerStatus :player="player" />
     <mainMenu />
     <localeMenu />
+    <achievementProgress />
     <gameOverModal @restartGame="restart" />
     <bonusDescription :player="player"/>
     <achievement />
@@ -14,25 +15,28 @@
 </template>
 
 <script>
-  import Player           from './entities/player';
-  import Text             from './entities/text';
-  import playerData       from './mock-data/player';
-  import enemiesData      from './mock-data/enemies';
-  import bonusesData      from './mock-data/bonuses';
-  import keysData         from './mock-data/keys';
-  import scoreboard       from './components/scoreboard';
-  import gameOverModal    from './components/subwindow/game-over-modal';
-  import bonusDescription from './components/subwindow/bonus-description';
-  import playerStatus from './components/player-status';
-  import mainMenu     from './components/main-menu';
-  import localeMenu   from './components/menu/locale-menu';
-  import fps          from './components/fps';
-  import achievement  from './components/achievement';
-  import $event       from './resources/utils/events';
-  import resources    from './resources/utils/resources';
-  import achievements from './resources/achievements';
+  import Player              from './entities/player';
+  import Text                from './entities/text';
+  import playerData          from './mock-data/player';
+  import enemiesData         from './mock-data/enemies';
+  import bonusesData         from './mock-data/bonuses';
+  import keysData            from './mock-data/keys';
+  import scoreboard          from './components/scoreboard';
+  import gameOverModal       from './components/subwindow/game-over-modal';
+  import bonusDescription    from './components/subwindow/bonus-description';
+  import playerStatus        from './components/player-status';
+  import mainMenu            from './components/main-menu';
+  import localeMenu            from './components/menu/locale-menu';
+  import fps                   from './components/fps';
+  import achievement           from './components/achievement';
+  import achievementProgress   from './components/subwindow/achievement-progress';
+  import $event                from './resources/utils/events';
+  import resources             from './resources/utils/resources';
+  import achievements          from './resources/achievements';
+  import toFixed               from './resources/utils/toFixed';
+  import getAchievementsStatus from './resources/utils/getAchievementsStatus';
+  import gameStats             from './resources/utils/gameStats';
   import './assets/styles/buttons.scss';
-  import toFixed      from './resources/utils/toFixed';
 
   export default {
     name:       'app',
@@ -45,6 +49,7 @@
       localeMenu,
       fps,
       achievement,
+      achievementProgress,
     },
 
     data() {
@@ -68,6 +73,9 @@
         fps:            60,
         bonusSpawned:   false,
         coinCount:      0,
+        enemiesCount:   0,
+        pickedBonuses:  [],
+        enemyKilled:    false,
       };
     },
 
@@ -81,9 +89,10 @@
     mounted() {
       this.lastTime = performance.now();
       this.init();
+      gameStats.init();
       this.start();
       bonusesData.loadTextures();
-      $event.$on('enemyKill', bonusesData.checkBonusSpawn.bind(bonusesData, this.player));
+      $event.$on('enemyKill', this.enemyKill);
       $event.$on('scoreGained', this.createGainedScore);
       $event.$on('plannedTask', this.addTask);
       $event.$on('pauseGame', this.pause);
@@ -92,6 +101,14 @@
         this.bonusSpawned = true;
       });
       $event.$on('levelUp', (level) => {
+        if (level === 10) {
+          $event.$emit('achievementUnlocked', achievements.get('in ten'));
+        }
+
+        if (level === 2 && !this.enemyKilled) {
+          $event.$emit('achievementUnlocked', achievements.get('gandhi'));
+        }
+
         if (level === 3 && this.bonusSpawned === false) {
           $event.$emit('achievementUnlocked', achievements.get('lucky'));
         }
@@ -103,9 +120,57 @@
           $event.$emit('achievementUnlocked', achievements.get('devils dozen'));
         }
       });
+      $event.$on('bonusPicked', (bonusName) => {
+        gameStats.set('totalBonusesPicked', 1);
+        gameStats.set(`${bonusName}Total`, 1);
+
+        if (!this.pickedBonuses.includes(bonusName)) {
+          this.pickedBonuses.push(bonusName);
+        }
+
+        if (this.pickedBonuses.length === 6) {
+          $event.$emit('achievementUnlocked', achievements.get('thanos'));
+        }
+      });
+      $event.$on('expChanged', (exp) => {
+        if (exp === 3.14) {
+          $event.$emit('achievementUnlocked', achievements.get('euclid'));
+        }
+      });
+
+      if (getAchievementsStatus('gandhi')) {
+        setTimeout(() => {
+          if (this.player.level === 1 && this.player.experience === 0) {
+            bonusesData.spawnBonus(this.player, bonusesData.getBonusData('knowledge'));
+          }
+        }, 111111);
+      }
     },
 
     methods:    {
+      enemyKill(enemy, isSafe) {
+        this.enemyKilled = true;
+        gameStats.set('totalEnemyKilled', 1);
+
+        if (gameStats.get('totalEnemyKilled') === 100) {
+          $event.$emit('achievementUnlocked', achievements.get('jason'));
+        }
+
+        bonusesData.checkBonusSpawn.call(bonusesData, this.player);
+
+        if (this.player.playerImmune && this.player.magnetEnabled) {
+          if (!isSafe) {
+            this.enemiesCount += 1;
+
+            if (this.enemiesCount === 30) {
+              $event.$emit('achievementUnlocked', achievements.get('leeroy jenkins'));
+            }
+          }
+        } else {
+          this.enemiesCount = 0;
+        }
+      },
+
       addTask(options) {
         const existedTask = this.tasks.filter(task => task.name === options.name)[0];
         options.time = Array.apply(null, Array(this.player.level))

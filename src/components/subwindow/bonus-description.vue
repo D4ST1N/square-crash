@@ -12,7 +12,7 @@
       <p slot="content">
         {{ $text(`BONUS.DESCRIPTION.${name.toUpperCase()}`) }}
       </p>
-      <button ref="ok" slot="footer" class="button" autofocus @click="hideModal">{{ $text('BONUS.POPUP.TITLE') }}</button>
+      <button ref="ok" slot="footer" class="button" autofocus @click="hideModal">{{ $text('BONUS.POPUP.BUTTON') }}</button>
     </modal>
   </div>
 </template>

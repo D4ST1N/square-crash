@@ -1,9 +1,10 @@
-import Entity      from './entity';
-import sizeStatus  from '../resources/utils/getSizeDifferenceStatus';
-import constants   from '../resources/constants';
-import bonusesData from '../mock-data/bonuses';
-import $event      from '../resources/utils/events';
-import toFixed     from '../resources/utils/toFixed';
+import Entity                from './entity';
+import sizeStatus            from '../resources/utils/getSizeDifferenceStatus';
+import constants             from '../resources/constants';
+import bonusesData           from '../mock-data/bonuses';
+import $event                from '../resources/utils/events';
+import toFixed               from '../resources/utils/toFixed';
+import getAchievementsStatus from '../resources/utils/getAchievementsStatus';
 
 export default class Player extends Entity {
   constructor({ level, ...options }) {
@@ -40,7 +41,8 @@ export default class Player extends Entity {
   }
 
   magnetArea() {
-    return this.size * 4;
+    const bonusAreaMultiplier = getAchievementsStatus('euclid') ? 1.25 : 1;
+    return this.size * 4 * bonusAreaMultiplier;
   }
 
   checkMoving(keys) {
@@ -66,6 +68,7 @@ export default class Player extends Entity {
     }
 
     const bonusData = bonusesData.getBonusData(bonus.name);
+    $event.$emit('bonusPicked', bonus.name);
 
     if (bonusData.action) {
       bonusData.action(this, bonus);
@@ -79,24 +82,28 @@ export default class Player extends Entity {
       return;
     }
 
-    if (this.playerImmune) {
-      this.getExp(enemy);
-    } else {
-      const difference = sizeStatus(this, enemy);
+    const difference = sizeStatus(this, enemy);
 
-      if (difference === constants.sizeDifferenceStatuses.safe) {
-        this.getExp(enemy);
-      } else if (difference === constants.sizeDifferenceStatuses.dangerous) {
-        this.death();
-      } else {
-        this.size -= Math.round(enemy.size / 8);
-        enemy.size -= Math.round(this.size / 4);
-      }
+    if (this.playerImmune) {
+      this.getExp(enemy, 1 , difference === constants.sizeDifferenceStatuses.safe);
+
+      return;
+    }
+
+
+    if (difference === constants.sizeDifferenceStatuses.safe) {
+      this.getExp(enemy);
+    } else if (difference === constants.sizeDifferenceStatuses.dangerous) {
+      this.death();
+    } else {
+      this.size -= Math.round(enemy.size / 8);
+      enemy.size -= Math.round(this.size / 4);
     }
   }
 
-  getExp(enemy, modifier = 1) {
-    const exp = Number(toFixed(Math.max(enemy.size / 8, 1) * modifier));
+  getExp(enemy, modifier = 1, isSafe) {
+    const bonusExpMultiplier = getAchievementsStatus('in ten') ? 1.15 : 1;
+    const exp = Number(toFixed(Math.max(enemy.size / 8, 1) * modifier * bonusExpMultiplier));
     const sizeChange = Math.round(exp);
     this.size += sizeChange;
     this.pos.x -= sizeChange / 2;
@@ -109,7 +116,7 @@ export default class Player extends Entity {
       exp * this.level * this.scoreMultipler,
       Object.assign({}, enemy.pos),
     );
-    $event.$emit('enemyKill', enemy);
+    $event.$emit('enemyKill', enemy, isSafe);
     enemy.isKilled = true;
   }
 
@@ -121,6 +128,7 @@ export default class Player extends Entity {
       $event.$emit('levelUp', this.level);
       this.experience -= expToLevelUp;
       $event.$emit('expChanged', this.experience);
+      this.checkExperience();
     }
   }
 

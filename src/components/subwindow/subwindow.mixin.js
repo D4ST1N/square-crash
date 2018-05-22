@@ -10,6 +10,10 @@ export default {
     content: {
       type: String,
     },
+    wide: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
