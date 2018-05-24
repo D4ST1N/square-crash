@@ -7,6 +7,8 @@ import constants              from '../resources/constants';
 import randomNumber           from '../resources/utils/randomNumber';
 import getDistanceBetweenDots from '../resources/utils/getDistanceBetweenDots';
 import getAchievementsStatus  from '../resources/utils/getAchievementsStatus';
+import achievements           from '../resources/achievements';
+import $event                 from '../resources/utils/events';
 
 export default {
   color:            {
@@ -101,7 +103,7 @@ export default {
         },
       );
       const traveled = distance / (player.magnetArea() + player.size / 2);
-      speedBonus = 25 - Math.round(traveled * 25);
+      speedBonus = (25 - Math.round(traveled * 25)) / 2;
     }
 
     const field = getCanvas();
@@ -143,7 +145,7 @@ export default {
     enemy.pos.y = yCoordinate;
   },
 
-  checkForMagnet(player, enemy) {
+  checkForMagnet(player, enemy, now) {
     const isInMagnetArea = collision.test.rectCircle(
       enemy,
       {
@@ -160,7 +162,16 @@ export default {
         x: player.pos.x + player.size / 2,
         y: player.pos.y + player.size / 2,
       };
+
+      if (!enemy.magnetStart) {
+        enemy.magnetStart = now;
+      } else if ((now - enemy.magnetStart) / 1000 > 2) {
+        $event.$emit('achievementUnlocked', achievements.get('run'));
+      }
+
       this.enemiesMoves(player, enemy, true);
+    } else {
+      enemy.magnetStart = null;
     }
   },
 
@@ -181,7 +192,7 @@ export default {
       || enemy.pos.y < offsetY - field.height || enemy.pos.y > offsetY + field.height;
   },
 
-  getEnemies(player) {
+  getEnemies(player, now) {
     let safeEnemyCount = 0;
 
     this.enemies.forEach((enemy, index) => {
@@ -208,7 +219,7 @@ export default {
         safeEnemyCount += 1;
 
         if (player.magnetEnabled) {
-          this.checkForMagnet(player, enemy);
+          this.checkForMagnet(player, enemy, now);
         }
       }
     });

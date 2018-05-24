@@ -208,8 +208,12 @@ export default {
 
   getBonuses(player) {
     this.bonuses.forEach((bonus, index) => {
-      if (bonus.isPicked || this.isBonusOutDiapason(player, bonus)) {
+      if (bonus.isPicked) {
         this.bonuses.splice(index, 1);
+      }
+
+      if (this.isBonusOutDiapason(player, bonus)) {
+        bonus.pos = this.getSpawnPosition(player);
       }
 
       const isCollide = collision.test.rectCircle(player, bonus);
@@ -248,13 +252,17 @@ export default {
     });
   },
 
-  spawnBonus(player, bonusData) {
+  getSpawnPosition(player) {
     const field = getCanvas();
+    return {
+      x: randomInt(player.pos.x - field.width / 4, player.pos.x + field.width / 4),
+      y: randomInt(player.pos.y - field.height / 4, player.pos.y + field.height / 4),
+    }
+  },
+
+  spawnBonus(player, bonusData) {
     const bonus = new Bonus({
-      pos:     {
-        x: randomInt(player.pos.x - field.width / 4, player.pos.x + field.width / 4),
-        y: randomInt(player.pos.y - field.height / 4, player.pos.y + field.height / 4),
-      },
+      pos:     this.getSpawnPosition(player),
       size:    20,
       name:    bonusData.name,
       pattern: resources.get(bonusData.name),

@@ -6,7 +6,12 @@
     <div class="achieve__icon-wrapper">
       <img :src="`img/achievements/${achieve.name}.png`" :alt="$text(achieve.label)" class="achieve__icon">
     </div>
-    <div class="achieve__content">
+    <div v-if="achieve.isSecret" data-locked="true" class="achieve__content">
+      <div class="achieve__label">{{ uglifyString($text(achieve.label)) }}</div>
+      <div class="achieve__description">{{ uglifyString($text(achieve.description)) }}</div>
+      <div class="achieve__reward">{{ uglifyString($text(achieve.reward)) }}</div>
+    </div>
+    <div v-else class="achieve__content">
       <div class="achieve__label">{{ $text(achieve.label) }}</div>
       <div class="achieve__description">{{ $text(achieve.description) }}</div>
       <div class="achieve__reward">{{ $text(achieve.reward) }}</div>
@@ -16,6 +21,7 @@
 
 <script>
   import getAchievementsStatus from '../resources/utils/getAchievementsStatus';
+  import uglifyString          from '../resources/utils/uglifyString';
 
   export default {
     name: "achieve",
@@ -31,6 +37,10 @@
         return !getAchievementsStatus(this.achieve.name);
       },
     },
+
+    methods: {
+      uglifyString,
+    }
   }
 </script>
 
@@ -97,6 +107,7 @@
       text-align: left;
       width: calc(100% - 80px);
       padding-left: 15px;
+      box-sizing: border-box;
     }
 
     &__label {

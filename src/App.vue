@@ -97,46 +97,11 @@
       $event.$on('plannedTask', this.addTask);
       $event.$on('pauseGame', this.pause);
       $event.$on('continueGame', this.continue);
-      $event.$on('bonusSpawned', () => {
-        this.bonusSpawned = true;
-      });
-      $event.$on('levelUp', (level) => {
-        if (level === 10) {
-          $event.$emit('achievementUnlocked', achievements.get('in ten'));
-        }
-
-        if (level === 2 && !this.enemyKilled) {
-          $event.$emit('achievementUnlocked', achievements.get('gandhi'));
-        }
-
-        if (level === 3 && this.bonusSpawned === false) {
-          $event.$emit('achievementUnlocked', achievements.get('lucky'));
-        }
-      });
-      $event.$on('coinPicked', () => {
-        this.coinCount += 1;
-
-        if (this.coinCount === 13) {
-          $event.$emit('achievementUnlocked', achievements.get('devils dozen'));
-        }
-      });
-      $event.$on('bonusPicked', (bonusName) => {
-        gameStats.set('totalBonusesPicked', 1);
-        gameStats.set(`${bonusName}Total`, 1);
-
-        if (!this.pickedBonuses.includes(bonusName)) {
-          this.pickedBonuses.push(bonusName);
-        }
-
-        if (this.pickedBonuses.length === 6) {
-          $event.$emit('achievementUnlocked', achievements.get('thanos'));
-        }
-      });
-      $event.$on('expChanged', (exp) => {
-        if (exp === 3.14) {
-          $event.$emit('achievementUnlocked', achievements.get('euclid'));
-        }
-      });
+      $event.$on('bonusSpawned', () => this.bonusSpawned = true);
+      $event.$on('levelUp', this.onLevelUp);
+      $event.$on('coinPicked', this.onCoinPicked);
+      $event.$on('bonusPicked', this.onBonusPicked);
+      $event.$on('expChanged', this.onExpChanged);
 
       if (getAchievementsStatus('gandhi')) {
         setTimeout(() => {
@@ -148,6 +113,47 @@
     },
 
     methods:    {
+      onLevelUp(level) {
+        if (level === 10) {
+          $event.$emit('achievementUnlocked', achievements.get('in ten'));
+        }
+
+        if (level === 2 && !this.enemyKilled) {
+          $event.$emit('achievementUnlocked', achievements.get('gandhi'));
+        }
+
+        if (level === 3 && this.bonusSpawned === false) {
+          $event.$emit('achievementUnlocked', achievements.get('lucky'));
+        }
+      },
+
+      onCoinPicked() {
+        this.coinCount += 1;
+
+        if (this.coinCount === 13) {
+          $event.$emit('achievementUnlocked', achievements.get('devils dozen'));
+        }
+      },
+
+      onBonusPicked(bonusName) {
+        gameStats.set('totalBonusesPicked', 1);
+        gameStats.set(`${bonusName}Total`, 1);
+
+        if (!this.pickedBonuses.includes(bonusName)) {
+          this.pickedBonuses.push(bonusName);
+        }
+
+        if (this.pickedBonuses.length === 6) {
+          $event.$emit('achievementUnlocked', achievements.get('thanos'));
+        }
+      },
+
+      onExpChanged(exp) {
+        if (exp === 3.14) {
+          $event.$emit('achievementUnlocked', achievements.get('euclid'));
+        }
+      },
+
       enemyKill(enemy, isSafe) {
         this.enemyKilled = true;
         gameStats.set('totalEnemyKilled', 1);
@@ -315,6 +321,12 @@
         this.ctx.restore();
       },
 
+      renderUIImage(image, pos, size) {
+        this.ctx.globalAlpha = 0.75;
+        this.ctx.drawImage(image, pos.x, pos.y, size.width, size.height);
+        this.ctx.restore();
+      },
+
       handleKeyDown(e) {
         if (Object.prototype.hasOwnProperty.call(this.keys, e.key)) {
           this.keys[e.key].pressed = true;
@@ -430,16 +442,16 @@
           const delta = this.gameTick / 1000;
           this.fps = Math.round(1 / delta);
           this.lastTime = now;
-          this.update();
+          this.update(now);
           this.render(now);
           this.tasks.forEach(this.checkTasks);
           this.raf = requestAnimationFrame(this.main);
         }
       },
 
-      update() {
+      update(now) {
         this.checkPlayerSize();
-        this.enemies = enemiesData.getEnemies(this.player);
+        this.enemies = enemiesData.getEnemies(this.player, now);
         this.bonuses = bonusesData.getBonuses(this.player);
         this.texts.forEach((text, index) => {
           text.time -= this.gameTick;
@@ -484,6 +496,20 @@
         this.tasks.forEach((task) => {
           this.renderRectangle(task, true);
           this.renderText(task.text, true);
+
+          if (task.size) {
+            this.renderUIImage(
+              resources.get(task.name),
+              {
+                x: task.size.width,
+                y: task.pos.y - 5,
+              },
+              {
+                width: 30,
+                height: 30,
+              },
+            );
+          }
         });
       },
     },

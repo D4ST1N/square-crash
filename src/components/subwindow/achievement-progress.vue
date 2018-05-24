@@ -51,8 +51,9 @@
 
           return 0
         };
+        const filter = achievement => achievement.isAvailable;
 
-        return [...achievements.list].sort(sort);
+        return [...achievements.list].sort(sort).filter(filter);
       }
     },
 
@@ -74,6 +75,8 @@
       display: flex;
       flex-wrap: wrap;
       max-width: 800px;
+      max-height: 75vh;
+      overflow: auto;
       justify-content: space-between;
     }
 

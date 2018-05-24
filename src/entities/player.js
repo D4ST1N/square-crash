@@ -41,7 +41,7 @@ export default class Player extends Entity {
   }
 
   magnetArea() {
-    const bonusAreaMultiplier = getAchievementsStatus('euclid') ? 1.25 : 1;
+    const bonusAreaMultiplier = getAchievementsStatus('run') ? 1.25 : 1;
     return this.size * 4 * bonusAreaMultiplier;
   }
 

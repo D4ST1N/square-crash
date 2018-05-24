@@ -47,7 +47,9 @@
       showModal() {
         this.show = true;
         this.$nextTick(() => {
-          this.$refs.restart.focus();
+          if (this.$refs.restart) {
+            this.$refs.restart.focus();
+          }
         })
       },
 

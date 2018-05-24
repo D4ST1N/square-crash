@@ -94,7 +94,7 @@
 
     &__close {
       position: absolute;
-      top: 130%;
+      top: 120%;
       border: none;
       background: transparent;
       color: #fff;
@@ -169,6 +169,7 @@
     &__label {
       position: absolute;
       top: 80%;
+      white-space: nowrap;
       padding: 4px 10px;
       background: rgba(38,166,154 ,1);
       color: #fff;
