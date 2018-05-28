@@ -26,21 +26,35 @@
         achievement: undefined,
         title: this.$text('ACHIEVEMENTS.TITLE'),
         showedTitle: '',
+        buffer: [],
+        achievementShowed: false,
       };
     },
 
     mounted() {
-      $event.$on('achievementUnlocked', this.showAchievement);
+      $event.$on('achievementUnlocked', this.addToBuffer);
     },
 
     methods: {
+      addToBuffer(achievement) {
+        this.buffer.push(achievement);
+        this.showAchievement();
+      },
+
       setAchievementUnlocked(name) {
         const achievements = getAchievementsStatus();
         achievements[name] = true;
-        localStorage.setItem('achievements', JSON.stringify(achievements))
+        localStorage.setItem('achievements', JSON.stringify(achievements));
       },
 
-      showAchievement(achievement) {
+      showAchievement() {
+        if (this.achievementShowed) {
+          return;
+        }
+
+        const achievement = this.buffer[0];
+        this.achievementShowed = true;
+
         if (getAchievementsStatus(achievement.name)) {
           return;
         }
@@ -64,7 +78,14 @@
 
       closeAchievement() {
         this.achievement = null;
-        $event.$emit('continueGame');
+        this.achievementShowed = false;
+        this.buffer.shift();
+
+        if (this.buffer.length > 0) {
+          this.showAchievement();
+        } else {
+          $event.$emit('continueGame');
+        }
       },
     },
   }

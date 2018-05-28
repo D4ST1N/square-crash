@@ -6,7 +6,7 @@
     <div class="achieve__icon-wrapper">
       <img :src="`img/achievements/${achieve.name}.png`" :alt="$text(achieve.label)" class="achieve__icon">
     </div>
-    <div v-if="achieve.isSecret" data-locked="true" class="achieve__content">
+    <div v-if="achieve.isSecret && isAchievementLocked" class="achieve__content">
       <div class="achieve__label">{{ uglifyString($text(achieve.label)) }}</div>
       <div class="achieve__description">{{ uglifyString($text(achieve.description)) }}</div>
       <div class="achieve__reward">{{ uglifyString($text(achieve.reward)) }}</div>
@@ -54,7 +54,7 @@
     background: rgba(25,118,210 ,1);
     box-shadow: 2px 2px 6px 0 rgba(0,151,167 ,.6);
     border-radius: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     position: relative;
     overflow: hidden;
 

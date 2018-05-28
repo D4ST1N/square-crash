@@ -5,18 +5,23 @@ import bonusesData           from '../mock-data/bonuses';
 import $event                from '../resources/utils/events';
 import toFixed               from '../resources/utils/toFixed';
 import getAchievementsStatus from '../resources/utils/getAchievementsStatus';
+import getCanvas             from '../resources/utils/getCanvas';
+import resources             from '../resources/utils/resources';
 
 export default class Player extends Entity {
-  constructor({ level, ...options }) {
+  constructor({ level, border, ...options }) {
     super(options);
-    this.initialSize = options.size;
     this.level = level;
+    this.border = border;
+    this.angle = 0;
     this.experience = 0;
     this.scoreMultipler = 1;
+    this.dashed = true;
     this.playerImmune = false;
     this.freezeEnemies = false;
     this.magnetEnabled = false;
     this.magnetAreaColor = 'rgba(38, 166, 154, .2)';
+    this.laserEnabled = false;
     this.offset = {
       x: 0,
       y: 0,
@@ -38,6 +43,24 @@ export default class Player extends Entity {
       2300,  // 14
       3000,  // 15
     ];
+    $event.$on('imageLoaded', (name) => {
+      if (name === 'deadpool') {
+        this.playerReady = true;
+        this.pattern = resources.get('deadpool');
+      }
+    });
+  }
+
+  loadSkin(name = 'deadpool') {
+    if (resources.get(name) === null) {
+      $event.$on('imageLoaded', (resourceName) => {
+        if (resourceName === name) {
+          this.pattern = resources.get(name);
+        }
+      });
+    } else {
+      this.pattern = resources.get(name);
+    }
   }
 
   magnetArea() {
@@ -45,20 +68,46 @@ export default class Player extends Entity {
     return this.size * 4 * bonusAreaMultiplier;
   }
 
-  checkMoving(keys) {
-    if (keys.ArrowLeft.pressed) {
+  getLaserCoordinates() {
+    const from = {
+      x: this.pos.x + this.size / 2,
+      y: this.pos.y + this.size / 2,
+    };
+    const laserLength = 500;
+
+    return {
+      from,
+      to: {
+        x: from.x + laserLength * Math.cos(Math.PI * (this.angle - 90) / 180),
+        y: from.y + laserLength * Math.sin(Math.PI * (this.angle - 90) / 180),
+      },
+      color: 'rgba(244,81,30 ,.5)',
+    }
+  }
+
+  checkMoving(control) {
+    if (control.keys[control.settings.left]) {
       this.moveLeft();
     }
 
-    if (keys.ArrowRight.pressed) {
+    if (control.keys[control.settings.right]) {
       this.moveRight();
     }
-    if (keys.ArrowUp.pressed) {
+
+    if (control.keys[control.settings.up]) {
       this.moveUp();
     }
 
-    if (keys.ArrowDown.pressed) {
+    if (control.keys[control.settings.down]) {
       this.moveDown();
+    }
+
+    if (control.keys[control.settings.rotateLeft]) {
+      this.angle -= 3;
+    }
+
+    if (control.keys[control.settings.rotateRight]) {
+      this.angle += 3;
     }
   }
 
@@ -104,13 +153,7 @@ export default class Player extends Entity {
   getExp(enemy, modifier = 1, isSafe) {
     const bonusExpMultiplier = getAchievementsStatus('in ten') ? 1.15 : 1;
     const exp = Number(toFixed(Math.max(enemy.size / 8, 1) * modifier * bonusExpMultiplier));
-    const sizeChange = Math.round(exp);
-    this.size += sizeChange;
-    this.pos.x -= sizeChange / 2;
-    this.pos.y -= sizeChange / 2;
-    this.experience += exp;
-    $event.$emit('expChanged', this.experience);
-    this.checkExperience();
+    this.growUp(exp);
     $event.$emit(
       'scoreGained',
       exp * this.level * this.scoreMultipler,
@@ -118,6 +161,19 @@ export default class Player extends Entity {
     );
     $event.$emit('enemyKill', enemy, isSafe);
     enemy.isKilled = true;
+  }
+
+  growUp(exp, isStatic = false) {
+    if (!isStatic) {
+      const sizeChange = Math.round(exp);
+      this.size += sizeChange;
+      this.pos.x -= sizeChange / 2;
+      this.pos.y -= sizeChange / 2;
+    }
+
+    this.experience += exp;
+    $event.$emit('expChanged', this.experience);
+    this.checkExperience();
   }
 
   checkExperience() {

@@ -64,6 +64,7 @@
 
       hideModal() {
         this.show = false;
+        $event.$emit('showMainMenu');
       },
     },
   }

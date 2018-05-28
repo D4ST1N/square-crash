@@ -39,8 +39,12 @@ export default {
       url: 'img/bonuses/book.png',
     },
     {
+      name: 'laser',
+      url: 'img/bonuses/laser.png',
+    },
+    {
       name: 'player shield',
-      url: 'img/bonuses/player-shield.png',
+      url: 'img/player-shield.png',
     },
   ],
   bonuses: [],
@@ -70,11 +74,11 @@ export default {
       maxCount: 1,
 
       spawnChance() {
-        return 0.5;
+        return getAchievementsStatus('thanos') ? 0.5 : 0;
       },
 
       action(player) {
-        enemiesData.killAll(player);
+        enemiesData.killHalf(player);
       },
     },
     {
@@ -180,17 +184,37 @@ export default {
       baseExpGained: 100,
 
       spawnChance() {
-        return getAchievementsStatus('thanos') ? 0.5 : 0;
+        return 0.5;
       },
 
       action(player) {
         const exp = this.baseExpGained * player.level;
-        player.size += exp;
-        player.pos.x -= exp / 2;
-        player.pos.y -= exp / 2;
-        player.experience += exp;
-        $event.$emit('expChanged', player.experience);
-        player.checkExperience();
+        player.growUp(exp, true);
+      },
+    },
+    {
+      name: 'laser',
+      maxCount: 1,
+      time: 10000,
+      color: 'rgba(57,73,171 ,.5)',
+
+      spawnChance() {
+        return getAchievementsStatus('hands') ? 0.5 : 0;
+      },
+
+      action(player) {
+        player.laserEnabled = true;
+        $event.$emit('laserEnabled');
+        $event.$emit(
+          'plannedTask',
+          {
+            ...this,
+            callback: (player) => {
+              $event.$emit('laserDisabled');
+              player.laserEnabled = false;
+            },
+          },
+        );
       },
     },
   ],

@@ -8,7 +8,16 @@ export default [
     label: 'MAIN_MENU.ACHIEVEMENTS',
 
     action() {
+      this.hideMenu();
       $event.$emit('showAchievementsProgress');
+    },
+  },
+  {
+    label: 'MAIN_MENU.CONTROL',
+
+    action() {
+      this.hideMenu();
+      $event.$emit('showControlSettings');
     },
   },
   {

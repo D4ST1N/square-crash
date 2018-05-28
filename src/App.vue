@@ -8,6 +8,7 @@
     <mainMenu />
     <localeMenu />
     <achievementProgress />
+    <controlSettings />
     <gameOverModal @restartGame="restart" />
     <bonusDescription :player="player"/>
     <achievement />
@@ -21,21 +22,22 @@
   import enemiesData         from './mock-data/enemies';
   import bonusesData         from './mock-data/bonuses';
   import keysData            from './mock-data/keys';
+  import control             from './resources/utils/control';
   import scoreboard          from './components/scoreboard';
   import gameOverModal       from './components/subwindow/game-over-modal';
   import bonusDescription    from './components/subwindow/bonus-description';
   import playerStatus        from './components/player-status';
   import mainMenu            from './components/main-menu';
-  import localeMenu            from './components/menu/locale-menu';
-  import fps                   from './components/fps';
-  import achievement           from './components/achievement';
-  import achievementProgress   from './components/subwindow/achievement-progress';
-  import $event                from './resources/utils/events';
-  import resources             from './resources/utils/resources';
-  import achievements          from './resources/achievements';
-  import toFixed               from './resources/utils/toFixed';
-  import getAchievementsStatus from './resources/utils/getAchievementsStatus';
-  import gameStats             from './resources/utils/gameStats';
+  import localeMenu          from './components/menu/locale-menu';
+  import fps                 from './components/fps';
+  import achievement         from './components/achievement';
+  import achievementProgress from './components/subwindow/achievement-progress';
+  import controlSettings     from './components/subwindow/control-settings';
+  import $event              from './resources/utils/events';
+  import resources           from './resources/utils/resources';
+  import achievements        from './resources/achievements';
+  import toFixed             from './resources/utils/toFixed';
+  import gameStats           from './resources/utils/gameStats';
   import './assets/styles/buttons.scss';
 
   export default {
@@ -50,6 +52,7 @@
       fps,
       achievement,
       achievementProgress,
+      controlSettings,
     },
 
     data() {
@@ -90,8 +93,10 @@
       this.lastTime = performance.now();
       this.init();
       gameStats.init();
+      control.loadSettings();
       this.start();
       bonusesData.loadTextures();
+      playerData.loadSkins();
       $event.$on('enemyKill', this.enemyKill);
       $event.$on('scoreGained', this.createGainedScore);
       $event.$on('plannedTask', this.addTask);
@@ -103,13 +108,11 @@
       $event.$on('bonusPicked', this.onBonusPicked);
       $event.$on('expChanged', this.onExpChanged);
 
-      if (getAchievementsStatus('gandhi')) {
-        setTimeout(() => {
-          if (this.player.level === 1 && this.player.experience === 0) {
-            bonusesData.spawnBonus(this.player, bonusesData.getBonusData('knowledge'));
-          }
-        }, 111111);
-      }
+      setTimeout(() => {
+        if (this.player.level === 1 && this.player.experience === 0) {
+          bonusesData.spawnBonus(this.player, bonusesData.getBonusData('knowledge'));
+        }
+      }, 111111);
     },
 
     methods:    {
@@ -243,6 +246,11 @@
 
         if (rect.border) {
           this.ctx.strokeStyle = rect.border;
+
+          if (rect.dashed) {
+            this.ctx.setLineDash([6]);
+          }
+
           this.ctx.strokeRect(
             rect.pos.x - offsetX,
             rect.pos.y - offsetY,
@@ -288,6 +296,22 @@
         this.ctx.restore();
       },
 
+      renderLine(line, isFixed = false) {
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (!isFixed) {
+          offsetX = this.player.getOffset().x;
+          offsetY = this.player.getOffset().y;
+        }
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(line.from.x - offsetX, line.from.y - offsetY);
+        this.ctx.lineTo(line.to.x - offsetX, line.to.y - offsetY);
+        this.ctx.strokeStyle = line.color;
+        this.ctx.stroke();
+      },
+
       renderText(text, isFixed = false) {
         if (!text || typeof text.pos !== 'object') {
           return;
@@ -306,7 +330,7 @@
         this.ctx.fillText(text.text, text.pos.x - offsetX, text.pos.y - offsetY);
       },
 
-      renderImage(pos, size, image, isFixed = false) {
+      renderImage(pos, size, image, angle = 0, isFixed = false) {
         let offsetX = 0;
         let offsetY = 0;
 
@@ -315,10 +339,15 @@
           offsetY = this.player.getOffset().y;
         }
 
-        this.ctx.save();
+        if (typeof angle === 'number') {
+          this.ctx.translate(pos.x + size / 2 - offsetX, pos.y + size / 2 - offsetY);
+          this.ctx.rotate(angle * Math.PI / 180);
+        }
+
         this.ctx.globalAlpha = 0.8;
-        this.ctx.drawImage(image, pos.x - offsetX, pos.y - offsetY, size, size);
-        this.ctx.restore();
+        this.ctx.drawImage(image, -size / 2, -size / 2, size, size);
+        this.ctx.globalAlpha = 1;
+        this.ctx.setTransform(1,0,0,1,0,0);
       },
 
       renderUIImage(image, pos, size) {
@@ -328,15 +357,11 @@
       },
 
       handleKeyDown(e) {
-        if (Object.prototype.hasOwnProperty.call(this.keys, e.key)) {
-          this.keys[e.key].pressed = true;
-        }
+        control.keys[e.code] = true;
       },
 
       handleKeyUp(e) {
-        if (Object.prototype.hasOwnProperty.call(this.keys, e.key)) {
-          this.keys[e.key].pressed = false;
-        }
+        control.keys[e.code] = false;
       },
 
       checkPlayerSize() {
@@ -430,6 +455,7 @@
 
       restart() {
         this.player = new Player(playerData.getData());
+        this.player.loadSkin();
         enemiesData.clear();
         bonusesData.clear();
         this.texts = [];
@@ -462,13 +488,17 @@
 
           text.moveUp();
         });
-        this.player.checkMoving(this.keys);
+        this.player.checkMoving(control);
       },
 
       render() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.renderBackground();
         this.enemies.forEach(enemy => this.renderRectangle(enemy));
+
+        if (this.player.laserEnabled) {
+          this.renderLine(this.player.getLaserCoordinates());
+        }
 
         if (this.player.magnetEnabled) {
           this.renderCircle({
@@ -482,6 +512,18 @@
         }
 
         this.renderRectangle(this.player);
+
+        if (this.player.pattern) {
+          this.renderImage(
+            {
+              x: this.player.pos.x,
+              y: this.player.pos.y,
+            },
+            this.player.size,
+            this.player.pattern,
+            this.player.angle,
+          );
+        }
 
         if (this.player.playerImmune) {
           this.renderImage(

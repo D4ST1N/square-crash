@@ -211,6 +211,15 @@ export default {
         player.collideWithEnemy(enemy);
       }
 
+      if (player.laserEnabled) {
+        const isCollideWithLaser = collision.test.lineRect(player.getLaserCoordinates(), enemy);
+
+        if (isCollideWithLaser) {
+          enemy.isOnLaser = true;
+          player.getExp(enemy, 0.75);
+        }
+      }
+
       if (player.freezeEnemies === false) {
         this.enemiesMoves(player, enemy);
       }
@@ -247,6 +256,12 @@ export default {
 
   killAll(player) {
     this.enemies.forEach(enemy => player.getExp(enemy, 0.25));
+  },
+
+  killHalf(player) {
+    this.enemies
+        .filter((enemy, index) => index < this.enemies.length / 2)
+        .forEach(enemy => player.getExp(enemy, 0.5));
   },
 
   clear() {

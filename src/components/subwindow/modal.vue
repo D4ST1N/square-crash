@@ -1,6 +1,6 @@
 <template>
   <div class="subwindow">
-    <transition name="subwindow" :duration="500">
+    <transition name="subwindow" :duration="500" @after-leave="afterLeave">
       <div :class="{'subwindow__overlay': true, 'subwindow__overlay--clickable': isWindowShow}" v-if="isWindowShow">
         <div
           ref="container"
@@ -45,9 +45,21 @@
         type: Number,
         default: 0,
       },
+      after: {
+        type: Function,
+        default() {
+          return () => {};
+        },
+      }
     },
 
     mounted() {},
+
+    methods: {
+      afterLeave() {
+        this.after();
+      },
+    }
   }
 </script>
 

@@ -72,6 +72,38 @@ export default {
       isSecret: false,
       isAvailable: true,
     },
+    {
+      name: 'hands',
+      description: 'ACHIEVEMENTS.HANDS.DESCRIPTION',
+      label: 'ACHIEVEMENTS.HANDS.NAME',
+      reward: 'ACHIEVEMENTS.HANDS.REWARD',
+      isSecret: true,
+      isAvailable: true,
+    },
+    {
+      name: 'road',
+      description: 'ACHIEVEMENTS.ROAD.DESCRIPTION',
+      label: 'ACHIEVEMENTS.ROAD.NAME',
+      reward: 'ACHIEVEMENTS.ROAD.REWARD',
+      isSecret: true,
+      isAvailable: true,
+    },
+    {
+      name: 'kraken',
+      description: 'ACHIEVEMENTS.KRAKEN.DESCRIPTION',
+      label: 'ACHIEVEMENTS.KRAKEN.NAME',
+      reward: 'ACHIEVEMENTS.KRAKEN.REWARD',
+      isSecret: false,
+      isAvailable: true,
+    },
+    {
+      name: 'ninja',
+      description: 'ACHIEVEMENTS.NINJA.DESCRIPTION',
+      label: 'ACHIEVEMENTS.NINJA.NAME',
+      reward: 'ACHIEVEMENTS.NINJA.REWARD',
+      isSecret: true,
+      isAvailable: true,
+    },
   ],
   get(name) {
     return this.list.filter(item => item.name === name && item.isAvailable)[0];

@@ -11,4 +11,11 @@ export default {
   ArrowDown: {
     pressed: false,
   },
+  KeyQ: {
+    pressed: false,
+  },
+  KeyE: {
+    pressed: false,
+  },
+
 }
