@@ -58,12 +58,10 @@
         }
 
         this.buffer.push(bonus);
-        console.log(this.buffer.length);
         this.bonusPicked();
       },
 
       afterLeave() {
-        console.log(this.buffer.length);
         if (this.buffer.length > 0) {
           this.bonusPicked();
         }

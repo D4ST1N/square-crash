@@ -43,6 +43,10 @@ export default {
       url: 'img/bonuses/laser.png',
     },
     {
+      name: 'life',
+      url: 'img/bonuses/heart.png',
+    },
+    {
       name: 'player shield',
       url: 'img/player-shield.png',
     },
@@ -215,6 +219,18 @@ export default {
             },
           },
         );
+      },
+    },
+    {
+      name: 'life',
+      maxCount: 1,
+
+      spawnChance() {
+        return getAchievementsStatus('road') ? 0.5 : 0;
+      },
+
+      action(player) {
+
       },
     },
   ],

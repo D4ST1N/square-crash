@@ -5,12 +5,13 @@ import bonusesData           from '../mock-data/bonuses';
 import $event                from '../resources/utils/events';
 import toFixed               from '../resources/utils/toFixed';
 import getAchievementsStatus from '../resources/utils/getAchievementsStatus';
-import getCanvas             from '../resources/utils/getCanvas';
 import resources             from '../resources/utils/resources';
+import achievements          from '../resources/achievements';
 
 export default class Player extends Entity {
   constructor({ level, border, ...options }) {
     super(options);
+    this.initialPosition = Object.assign({}, options.pos);
     this.level = level;
     this.border = border;
     this.angle = 0;
@@ -86,6 +87,12 @@ export default class Player extends Entity {
   }
 
   checkMoving(control) {
+    if (Math.abs(this.initialPosition.x - this.pos.x) > 10000
+      || Math.abs(this.initialPosition.y - this.pos.y) > 10000
+    ) {
+      $event.$emit('achievementUnlocked', achievements.get('road'));
+    }
+
     if (control.keys[control.settings.left]) {
       this.moveLeft();
     }
@@ -145,12 +152,17 @@ export default class Player extends Entity {
     } else if (difference === constants.sizeDifferenceStatuses.dangerous) {
       this.death();
     } else {
+      const bonusMultiplier = getAchievementsStatus('kraken') ? 0.66 : 1;
       this.size -= Math.round(enemy.size / 8);
-      enemy.size -= Math.round(this.size / 4);
+      enemy.size -= Math.round(this.size / (4 * bonusMultiplier));
     }
   }
 
   getExp(enemy, modifier = 1, isSafe) {
+    if (enemy.size / this.size > 5) {
+      $event.$emit('achievementUnlocked', achievements.get('kraken'));
+    }
+
     const bonusExpMultiplier = getAchievementsStatus('in ten') ? 1.15 : 1;
     const exp = Number(toFixed(Math.max(enemy.size / 8, 1) * modifier * bonusExpMultiplier));
     this.growUp(exp);
@@ -198,21 +210,25 @@ export default class Player extends Entity {
   }
 
   moveLeft() {
+    $event.$emit('playerMove', 'left');
     this.offset.x -= this.speed;
     this.pos.x -= this.speed;
   }
 
   moveRight() {
+    $event.$emit('playerMove', 'right');
     this.offset.x += this.speed;
     this.pos.x += this.speed;
   }
 
   moveUp() {
+    $event.$emit('playerMove', 'up');
     this.offset.y -= this.speed;
     this.pos.y -= this.speed;
   }
 
   moveDown() {
+    $event.$emit('playerMove', 'down');
     this.offset.y += this.speed;
     this.pos.y += this.speed;
   }

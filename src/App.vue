@@ -16,28 +16,29 @@
 </template>
 
 <script>
-  import Player              from './entities/player';
-  import Text                from './entities/text';
-  import playerData          from './mock-data/player';
-  import enemiesData         from './mock-data/enemies';
-  import bonusesData         from './mock-data/bonuses';
-  import keysData            from './mock-data/keys';
-  import control             from './resources/utils/control';
-  import scoreboard          from './components/scoreboard';
-  import gameOverModal       from './components/subwindow/game-over-modal';
-  import bonusDescription    from './components/subwindow/bonus-description';
-  import playerStatus        from './components/player-status';
-  import mainMenu            from './components/main-menu';
-  import localeMenu          from './components/menu/locale-menu';
-  import fps                 from './components/fps';
-  import achievement         from './components/achievement';
-  import achievementProgress from './components/subwindow/achievement-progress';
-  import controlSettings     from './components/subwindow/control-settings';
-  import $event              from './resources/utils/events';
-  import resources           from './resources/utils/resources';
-  import achievements        from './resources/achievements';
-  import toFixed             from './resources/utils/toFixed';
-  import gameStats           from './resources/utils/gameStats';
+  import Player                from './entities/player';
+  import Text                  from './entities/text';
+  import playerData            from './mock-data/player';
+  import enemiesData           from './mock-data/enemies';
+  import bonusesData           from './mock-data/bonuses';
+  import keysData              from './mock-data/keys';
+  import control               from './resources/utils/control';
+  import scoreboard            from './components/scoreboard';
+  import gameOverModal         from './components/subwindow/game-over-modal';
+  import bonusDescription      from './components/subwindow/bonus-description';
+  import playerStatus          from './components/player-status';
+  import mainMenu              from './components/main-menu';
+  import localeMenu            from './components/menu/locale-menu';
+  import fps                   from './components/fps';
+  import achievement           from './components/achievement';
+  import achievementProgress   from './components/subwindow/achievement-progress';
+  import controlSettings       from './components/subwindow/control-settings';
+  import $event                from './resources/utils/events';
+  import resources             from './resources/utils/resources';
+  import achievements          from './resources/achievements';
+  import toFixed               from './resources/utils/toFixed';
+  import gameStats             from './resources/utils/gameStats';
+  import getAchievementsStatus from './resources/utils/getAchievementsStatus';
   import './assets/styles/buttons.scss';
 
   export default {
@@ -78,7 +79,9 @@
         coinCount:      0,
         enemiesCount:   0,
         pickedBonuses:  [],
+        bonusPicked:    false,
         enemyKilled:    false,
+        playerMoved:    false,
       };
     },
 
@@ -107,6 +110,14 @@
       $event.$on('coinPicked', this.onCoinPicked);
       $event.$on('bonusPicked', this.onBonusPicked);
       $event.$on('expChanged', this.onExpChanged);
+      $event.$on('scoreChanged', (score) => {
+        if (score > 10 && !this.playerMoved) {
+          $event.$emit('achievementUnlocked', achievements.get('ninja'));
+        }
+      });
+      $event.$once('playerMove', () => {
+        this.playerMoved = true;
+      });
 
       setTimeout(() => {
         if (this.player.level === 1 && this.player.experience === 0) {
@@ -117,16 +128,20 @@
 
     methods:    {
       onLevelUp(level) {
-        if (level === 10) {
-          $event.$emit('achievementUnlocked', achievements.get('in ten'));
-        }
-
         if (level === 2 && !this.enemyKilled) {
           $event.$emit('achievementUnlocked', achievements.get('gandhi'));
         }
 
         if (level === 3 && this.bonusSpawned === false) {
           $event.$emit('achievementUnlocked', achievements.get('lucky'));
+        }
+
+        if (level === 5 && !this.bonusPicked) {
+          $event.$emit('achievementUnlocked', achievements.get('hands'));
+        }
+
+        if (level === 10) {
+          $event.$emit('achievementUnlocked', achievements.get('in ten'));
         }
       },
 
@@ -139,6 +154,7 @@
       },
 
       onBonusPicked(bonusName) {
+        this.bonusPicked = true;
         gameStats.set('totalBonusesPicked', 1);
         gameStats.set(`${bonusName}Total`, 1);
 
@@ -161,7 +177,7 @@
         this.enemyKilled = true;
         gameStats.set('totalEnemyKilled', 1);
 
-        if (gameStats.get('totalEnemyKilled') === 100) {
+        if (gameStats.get('totalEnemyKilled') === 10000) {
           $event.$emit('achievementUnlocked', achievements.get('jason'));
         }
 
@@ -182,8 +198,9 @@
 
       addTask(options) {
         const existedTask = this.tasks.filter(task => task.name === options.name)[0];
+        const bonusMultiplier = getAchievementsStatus('ninja') ? 0.66 : 1;
         options.time = Array.apply(null, Array(this.player.level))
-                            .reduce(sum => sum += sum * 0.1, options.time);
+                            .reduce(sum => sum += sum * 0.05 * bonusMultiplier, options.time);
 
         if (existedTask) {
           existedTask.time += options.time;
