@@ -1,12 +1,13 @@
 <template>
   <div class="scoreboard">
-    <span class="scoreboard__score">{{ $text('UI.SCORE') }}: {{ score }}</span>
-    <span class="scoreboard__score">{{ $text('UI.HIGH_SCORE') }}: {{ highScore }}</span>
+    <span class="scoreboard__score">{{ $text('UI.SCORE') }}: {{ toFixed(score) }}</span>
+    <span class="scoreboard__score">{{ $text('UI.HIGH_SCORE') }}: {{ toFixed(highScore) }}</span>
   </div>
 </template>
 
 <script>
   import $event from '../resources/utils/events';
+  import toFixed from '../resources/utils/toFixed';
 
   export default {
     name: 'scoreboard',
@@ -25,6 +26,8 @@
     },
 
     methods: {
+      toFixed,
+
       resetScore() {
         this.score = 0;
       },

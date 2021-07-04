@@ -1,4 +1,5 @@
 {
+  "CURRENT_LOCALE": "English",
   "UI": {
     "SCORE": "Score",
     "HIGH_SCORE": "High Score"
@@ -15,12 +16,15 @@
       "BUTTON": "Got it"
     },
     "DESCRIPTION": {
-      "COIN": "TBD",
-      "X3": "TBD",
-      "FREEZE": "TBD",
-      "BOMB": "TBD",
-      "SHIELD": "TBD",
-      "MAGNET": "TBD"
     }
+  },
+  "MAIN_MENU": {
+    "PLAYER": "Player",
+    "ACHIEVEMENTS": "Achievements",
+    "LOCALE": "Game language",
+    "CLOSE": "Close"
+  },
+  "LOCALE_MENU": {
+    "BACK": "Back"
   }
 }

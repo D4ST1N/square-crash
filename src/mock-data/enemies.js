@@ -6,6 +6,9 @@ import collision              from '../resources/utils/collision';
 import constants              from '../resources/constants';
 import randomNumber           from '../resources/utils/randomNumber';
 import getDistanceBetweenDots from '../resources/utils/getDistanceBetweenDots';
+import getAchievementsStatus  from '../resources/utils/getAchievementsStatus';
+import achievements           from '../resources/achievements';
+import $event                 from '../resources/utils/events';
 
 export default {
   color:            {
@@ -100,7 +103,7 @@ export default {
         },
       );
       const traveled = distance / (player.magnetArea() + player.size / 2);
-      speedBonus = 25 - Math.round(traveled * 25);
+      speedBonus = (25 - Math.round(traveled * 25)) / 2;
     }
 
     const field = getCanvas();
@@ -142,7 +145,7 @@ export default {
     enemy.pos.y = yCoordinate;
   },
 
-  checkForMagnet(player, enemy) {
+  checkForMagnet(player, enemy, now) {
     const isInMagnetArea = collision.test.rectCircle(
       enemy,
       {
@@ -159,7 +162,16 @@ export default {
         x: player.pos.x + player.size / 2,
         y: player.pos.y + player.size / 2,
       };
+
+      if (!enemy.magnetStart) {
+        enemy.magnetStart = now;
+      } else if ((now - enemy.magnetStart) / 1000 > 2) {
+        $event.$emit('achievementUnlocked', achievements.get('run'));
+      }
+
       this.enemiesMoves(player, enemy, true);
+    } else {
+      enemy.magnetStart = null;
     }
   },
 
@@ -180,7 +192,7 @@ export default {
       || enemy.pos.y < offsetY - field.height || enemy.pos.y > offsetY + field.height;
   },
 
-  getEnemies(player) {
+  getEnemies(player, now) {
     let safeEnemyCount = 0;
 
     this.enemies.forEach((enemy, index) => {
@@ -193,20 +205,30 @@ export default {
 
       Object.assign(enemy, this.colorizeAccordingDifference(enemy, player));
       const isCollide = collision.test.squareSquare(player, enemy);
+      const isSave = this.isEnemySafe(player, enemy);
 
       if (isCollide) {
         player.collideWithEnemy(enemy);
+      }
+
+      if (player.laserEnabled) {
+        const isCollideWithLaser = collision.test.lineRect(player.getLaserCoordinates(), enemy);
+
+        if (isCollideWithLaser) {
+          enemy.isOnLaser = true;
+          player.getExp(enemy, 0.75);
+        }
       }
 
       if (player.freezeEnemies === false) {
         this.enemiesMoves(player, enemy);
       }
 
-      if (this.isEnemySafe(player, enemy) || player.playerImmune) {
+      if (isSave || player.playerImmune) {
         safeEnemyCount += 1;
 
         if (player.magnetEnabled) {
-          this.checkForMagnet(player, enemy);
+          this.checkForMagnet(player, enemy, now);
         }
       }
     });
@@ -217,7 +239,9 @@ export default {
       max = Math.max(max, 100);
     }
 
-    if (safeEnemyCount < Math.round(this.enemies.length / 10)) {
+    const minSafeCountBonus = getAchievementsStatus('jason') ? 1.25 : 1;
+
+    if (safeEnemyCount < Math.round(this.enemies.length / 10 * minSafeCountBonus)) {
       for (; 0 !== safeEnemyCount; safeEnemyCount -= 1) {
         this.enemies.push(this.createEnemy(player, true));
       }
@@ -232,6 +256,12 @@ export default {
 
   killAll(player) {
     this.enemies.forEach(enemy => player.getExp(enemy, 0.25));
+  },
+
+  killHalf(player) {
+    this.enemies
+        .filter((enemy, index) => index < this.enemies.length / 2)
+        .forEach(enemy => player.getExp(enemy, 0.5));
   },
 
   clear() {

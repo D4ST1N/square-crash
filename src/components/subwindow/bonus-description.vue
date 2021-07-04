@@ -6,13 +6,13 @@
       :show="show"
       :left="modalLeft"
       :top="modalTop"
+      :after="afterLeave"
       ref="modal"
-      @onHide="hideModal"
     >
       <p slot="content">
         {{ $text(`BONUS.DESCRIPTION.${name.toUpperCase()}`) }}
       </p>
-      <button ref="ok" slot="footer" class="button" autofocus @click="hideModal">{{ $text('BONUS.POPUP.TITLE') }}</button>
+      <button ref="ok" slot="footer" class="button" autofocus @click="hideModal">{{ $text('BONUS.POPUP.BUTTON') }}</button>
     </modal>
   </div>
 </template>
@@ -40,21 +40,45 @@
         top: 0,
         modalLeft: 0,
         modalTop: 0,
+        buffer: [],
+        bonusDescShowed: false,
       };
     },
 
     mounted() {
-      $event.$on('bonusSpawned', this.bonusPicked);
+      $event.$on('bonusSpawned', this.addToBuffer);
     },
 
     methods: {
-      bonusPicked(bonus) {
-        this.name = bonus.name;
-        const showedBonuses = JSON.parse(localStorage.getItem('showedBonuses')) || [];
+      addToBuffer(bonus) {
+        const showedBonuses = this.getShowedBonuses();
 
         if (showedBonuses.includes(bonus.name)) {
           return;
         }
+
+        this.buffer.push(bonus);
+        this.bonusPicked();
+      },
+
+      afterLeave() {
+        if (this.buffer.length > 0) {
+          this.bonusPicked();
+        }
+      },
+
+      getShowedBonuses() {
+        return JSON.parse(localStorage.getItem('showedBonuses')) || [];
+      },
+
+      bonusPicked() {
+        if (this.bonusDescShowed) {
+          return;
+        }
+
+        const bonus = this.buffer[0];
+        this.bonusDescShowed = true;
+        this.name = bonus.name;
 
         $event.$emit('pauseGame');
         this.showModal();
@@ -64,6 +88,7 @@
           this.left = this.getAccentPosition(bonus).x;
           this.top = this.getAccentPosition(bonus).y;
         });
+        const showedBonuses = this.getShowedBonuses();
         showedBonuses.push(bonus.name);
         localStorage.setItem('showedBonuses', JSON.stringify(showedBonuses));
       },
@@ -137,6 +162,9 @@
 
       hideModal() {
         this.show = false;
+        this.buffer.shift();
+        console.log(1);
+        this.bonusDescShowed = false;
         $event.$emit('continueGame');
       },
     },

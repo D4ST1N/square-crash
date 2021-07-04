@@ -1,6 +1,6 @@
 <template>
   <div class="subwindow">
-    <transition name="subwindow" :duration="10000">
+    <transition name="subwindow" :duration="500" @after-leave="afterLeave">
       <div :class="{'subwindow__overlay': true, 'subwindow__overlay--clickable': isWindowShow}" v-if="isWindowShow">
         <div
           ref="container"
@@ -10,7 +10,7 @@
             top: `${top}px`,
           }"
         >
-          <div class="subwindow__wrapper">
+          <div :class="{'subwindow__wrapper': true, 'subwindow__wrapper--wide': wide }">
             <header class="subwindow__header">
               <h1 class="subwindow__title">{{ title }}</h1>
               <slot name="header"></slot>
@@ -30,7 +30,7 @@
 </template>
 
 <script>
-  import subwindow from './subwindow';
+  import subwindow from './subwindow.mixin';
   import './subwindow.scss'
 
   export default {
@@ -45,9 +45,21 @@
         type: Number,
         default: 0,
       },
+      after: {
+        type: Function,
+        default() {
+          return () => {};
+        },
+      }
     },
 
     mounted() {},
+
+    methods: {
+      afterLeave() {
+        this.after();
+      },
+    }
   }
 </script>
 
