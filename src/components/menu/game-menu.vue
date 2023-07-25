@@ -5,6 +5,7 @@
         <div class="menu__wrapper">
           <div
             v-for="(item, index) in items"
+            :key="index"
             :class="{ 'menu__item': true, 'menu__item--alternative': alternative }"
             :style="{
               'animation-delay': `${0.05 * index}s`,

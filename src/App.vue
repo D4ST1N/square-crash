@@ -2,7 +2,7 @@
   <div id="app">
     <canvas id="field" class="field"></canvas>
     <canvas id="buffer" class="field--buffer"></canvas>
-    <!--<fps :fps="fps"/>-->
+    <!-- <fps :fps="fps"/> -->
     <scoreboard />
     <playerStatus :player="player" />
     <mainMenu />
@@ -29,7 +29,6 @@
   import playerStatus          from './components/player-status';
   import mainMenu              from './components/main-menu';
   import localeMenu            from './components/menu/locale-menu';
-  import fps                   from './components/fps';
   import achievement           from './components/achievement';
   import achievementProgress   from './components/subwindow/achievement-progress';
   import controlSettings       from './components/subwindow/control-settings';
@@ -50,7 +49,6 @@
       bonusDescription,
       mainMenu,
       localeMenu,
-      fps,
       achievement,
       achievementProgress,
       controlSettings,

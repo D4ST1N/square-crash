@@ -46,7 +46,7 @@
 
 <script>
   export default {
-    name: "edit",
+    name: "EditIcon",
     props: {
       width: {
         type: Number,

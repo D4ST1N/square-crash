@@ -19,7 +19,7 @@
   import getAchievementsStatus from '../resources/utils/getAchievementsStatus';
 
   export default {
-    name: "achievement",
+    name: "GameAchievement",
 
     data() {
       return {

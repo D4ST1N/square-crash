@@ -24,7 +24,7 @@
   import uglifyString          from '../resources/utils/uglifyString';
 
   export default {
-    name: "achieve",
+    name: "GameAchieve",
     props: {
       achieve: {
         type: Object,

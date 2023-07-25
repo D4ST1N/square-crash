@@ -34,7 +34,7 @@
   import './subwindow.scss'
 
   export default {
-    name: "modal",
+    name: "GameModal",
     mixins: [subwindow],
     props: {
       left: {

@@ -4,7 +4,7 @@
 
 <script>
   export default {
-    name: "fps",
+    name: "GameFps",
     props: {
       fps: Number
     },

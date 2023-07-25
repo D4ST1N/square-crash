@@ -1,5 +1,8 @@
 {
-  "rules": {
-    "comma-dangle": ["error", "always-multiline"]
+  "extends": [
+    "plugin:vue/essential"
+  ],
+  "parserOptions": {
+    "parser": "@babel/eslint-parser"
   }
 }

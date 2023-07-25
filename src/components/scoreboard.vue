@@ -10,7 +10,7 @@
   import toFixed from '../resources/utils/toFixed';
 
   export default {
-    name: 'scoreboard',
+    name: 'ScoreBoard',
 
     data() {
       return {
@@ -45,7 +45,7 @@
       setHighScore() {
         localStorage.setItem('highScore', JSON.stringify({
           score:   this.highScore,
-          version: this.$root.version,
+          version: APPLICATION_VERSION,
         }));
       },
 
@@ -56,7 +56,8 @@
         if (highScoreStore) {
           const highScoreData = JSON.parse(highScoreStore);
 
-          if (highScoreData.version === this.$root.version) {
+          console.log(highScoreData.version, APPLICATION_VERSION);
+          if (highScoreData.version === APPLICATION_VERSION) {
             this.highScore = highScoreData.score;
           }
         }

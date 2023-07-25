@@ -7,7 +7,7 @@
       @onHide="hideModal"
     >
       <div class="control-settings__wrapper" slot="content">
-        <div v-for="(item, key) in settings" class="control-settings__item">
+        <div v-for="(item, key) in settings" :key="key" class="control-settings__item">
           {{ $text(`CONTROL_SETTINGS.KEYS.${key.toUpperCase()}`) }}:
           <span class="control-settings__key">{{ item }}</span>
           <button class="control-settings__button" @click="changeKey(key)">
